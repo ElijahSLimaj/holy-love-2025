@@ -1,0 +1,201 @@
+import 'package:flutter/material.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../../../../core/constants/app_dimensions.dart';
+import '../../../../shared/widgets/custom_button.dart';
+
+class WelcomeScreen extends StatelessWidget {
+  const WelcomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.background,
+              AppColors.lightGray,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.screenPaddingHorizontal,
+            ),
+            child: Column(
+              children: [
+                const Spacer(flex: 2),
+                
+                // Hero Section
+                _buildHeroSection(context),
+                
+                const Spacer(flex: 3),
+                
+                // Action Buttons
+                _buildActionButtons(context),
+                
+                const SizedBox(height: AppDimensions.spacing32),
+                
+                // Sign In Link
+                _buildSignInLink(context),
+                
+                const SizedBox(height: AppDimensions.spacing24),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroSection(BuildContext context) {
+    return Column(
+      children: [
+        // Logo
+        Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            shape: BoxShape.circle,
+            boxShadow: AppColors.cardShadow,
+          ),
+          child: const Icon(
+            Icons.favorite,
+            size: 50,
+            color: AppColors.primary,
+          ),
+        ),
+        
+        const SizedBox(height: AppDimensions.spacing32),
+        
+        // Welcome Text
+        Text(
+          AppStrings.welcome,
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        
+        const SizedBox(height: AppDimensions.spacing16),
+        
+        // Welcome Message
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.paddingL,
+          ),
+          child: Text(
+            AppStrings.welcomeMessage,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.6,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    return Column(
+      children: [
+        // Get Started Button
+        CustomButton(
+          text: AppStrings.getStarted,
+          onPressed: () {
+            // TODO: Navigate to sign up
+            _showComingSoon(context);
+          },
+          variant: ButtonVariant.gradient,
+        ),
+        
+        const SizedBox(height: AppDimensions.spacing16),
+        
+        // Continue with Google
+        CustomButton(
+          text: AppStrings.continueWithGoogle,
+          onPressed: () {
+            // TODO: Implement Google sign in
+            _showComingSoon(context);
+          },
+          variant: ButtonVariant.secondary,
+          icon: const Icon(
+            Icons.g_mobiledata,
+            size: AppDimensions.iconM,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        
+        const SizedBox(height: AppDimensions.spacing12),
+        
+        // Continue with Apple
+        CustomButton(
+          text: AppStrings.continueWithApple,
+          onPressed: () {
+            // TODO: Implement Apple sign in
+            _showComingSoon(context);
+          },
+          variant: ButtonVariant.secondary,
+          icon: const Icon(
+            Icons.apple,
+            size: AppDimensions.iconM,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSignInLink(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          AppStrings.alreadyHaveAccount,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(width: AppDimensions.spacing8),
+        TextButton(
+          onPressed: () {
+            // TODO: Navigate to sign in
+            _showComingSoon(context);
+          },
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: Text(
+            AppStrings.signIn,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showComingSoon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Coming soon! We\'re building this feature.'),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+        ),
+      ),
+    );
+  }
+} 
