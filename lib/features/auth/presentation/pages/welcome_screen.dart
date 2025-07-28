@@ -3,6 +3,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../shared/widgets/custom_button.dart';
+import '../../../main/presentation/pages/main_navigation_screen.dart';
 import 'sign_up_screen.dart';
 import 'sign_in_screen.dart';
 import 'profile_creation_screen.dart';
@@ -121,7 +122,7 @@ class WelcomeScreen extends StatelessWidget {
         // Continue with Google
         CustomButton(
           text: AppStrings.continueWithGoogle,
-          onPressed: () => _navigateToPhotoUpload(context),
+          onPressed: () => _navigateToMainApp(context),
           variant: ButtonVariant.secondary,
           icon: const Icon(
             Icons.g_mobiledata,
@@ -242,6 +243,28 @@ class WelcomeScreen extends StatelessWidget {
           );
         },
         transitionDuration: const Duration(milliseconds: 400),
+      ),
+    );
+  }
+
+  void _navigateToMainApp(BuildContext context) {
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const MainNavigationScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: Tween<double>(
+              begin: 0.0,
+              end: 1.0,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOut,
+            )),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 500),
       ),
     );
   }

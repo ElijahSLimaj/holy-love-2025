@@ -166,10 +166,10 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
     return Container(
       padding: const EdgeInsets.all(AppDimensions.paddingL),
       decoration: BoxDecoration(
-        color: AppColors.lightGray.withOpacity(0.3),
+        color: AppColors.accentLight.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppDimensions.radiusM),
         border: Border.all(
-          color: AppColors.border.withOpacity(0.3),
+          color: AppColors.accent.withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -181,12 +181,12 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
               Container(
                 padding: const EdgeInsets.all(AppDimensions.spacing8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.accent.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(AppDimensions.radiusS),
                 ),
                 child: Icon(
                   Icons.lightbulb_outline,
-                  color: AppColors.primary,
+                  color: AppColors.accent,
                   size: 20,
                 ),
               ),

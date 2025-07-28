@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../shared/widgets/custom_button.dart';
+import '../../../main/presentation/pages/main_navigation_screen.dart';
 import '../widgets/profile_step_basic_info.dart';
 import '../widgets/profile_step_photos.dart';
 import '../widgets/profile_step_faith.dart';
@@ -434,12 +435,30 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
     );
     
     await Future.delayed(const Duration(seconds: 2));
+    _navigateToMainApp();
   }
   
   void _navigateToMainApp() {
-    // TODO: Navigate to main app with bottom navigation
     Navigator.of(context).pop(); // Close dialog
-    Navigator.of(context).pop(); // Go back for now
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const MainNavigationScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: Tween<double>(
+              begin: 0.0,
+              end: 1.0,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOut,
+            )),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
   }
   
   // Helper methods
