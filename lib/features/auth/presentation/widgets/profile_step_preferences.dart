@@ -244,9 +244,9 @@ class _ProfileStepPreferencesState extends State<ProfileStepPreferences>
                   animation: _sliderAnimation,
                   builder: (context, child) {
                     return Opacity(
-                      opacity: _sliderAnimation.value,
+                      opacity: _sliderAnimation.value.clamp(0.0, 1.0),
                       child: Transform.scale(
-                        scale: 0.8 + (0.2 * _sliderAnimation.value),
+                        scale: 0.8 + (0.2 * _sliderAnimation.value.clamp(0.0, 1.0)),
                         child: SliderTheme(
                           data: SliderTheme.of(context).copyWith(
                             activeTrackColor: AppColors.primary,
@@ -372,9 +372,9 @@ class _ProfileStepPreferencesState extends State<ProfileStepPreferences>
                   animation: _sliderAnimation,
                   builder: (context, child) {
                     return Opacity(
-                      opacity: _sliderAnimation.value,
+                      opacity: _sliderAnimation.value.clamp(0.0, 1.0),
                       child: Transform.scale(
-                        scale: 0.8 + (0.2 * _sliderAnimation.value),
+                        scale: 0.8 + (0.2 * _sliderAnimation.value.clamp(0.0, 1.0)),
                         child: SliderTheme(
                           data: SliderTheme.of(context).copyWith(
                             activeTrackColor: AppColors.accent,

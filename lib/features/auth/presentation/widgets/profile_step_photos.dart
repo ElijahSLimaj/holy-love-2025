@@ -22,32 +22,23 @@ class ProfileStepPhotos extends StatefulWidget {
 
 class _ProfileStepPhotosState extends State<ProfileStepPhotos>
     with TickerProviderStateMixin {
-  final ImagePicker _picker = ImagePicker();
-  List<XFile?> _photoFiles = [];
-  Set<int> _loadingPhotos = {};
-  
   late AnimationController _slideController;
-  late AnimationController _scaleController;
   late List<Animation<Offset>> _photoAnimations;
   
   final int _maxPhotos = 6;
+  final List<GlobalKey<_PhotoCardState>> _cardKeys = [];
   
   @override
   void initState() {
     super.initState();
     _setupAnimations();
-    _loadExistingPhotos();
+    _initializeCardKeys();
     _startAnimations();
   }
   
   void _setupAnimations() {
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 300),
       vsync: this,
     );
     
@@ -68,21 +59,12 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
         ),
       ));
     });
-    
-
   }
   
-  void _loadExistingPhotos() {
-    // Always initialize with 6 slots
-    _photoFiles = List.generate(_maxPhotos, (index) => null);
-    
-    final photos = widget.profileData['photos'] as List<String>?;
-    if (photos != null && photos.isNotEmpty) {
-      // TODO: Convert saved photo paths back to XFile objects if needed
-      // For now, we'll start fresh each time the user returns to this step
-      setState(() {
-        _loadingPhotos.clear();
-      });
+  void _initializeCardKeys() {
+    _cardKeys.clear();
+    for (int i = 0; i < _maxPhotos; i++) {
+      _cardKeys.add(GlobalKey<_PhotoCardState>());
     }
   }
   
@@ -96,8 +78,38 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
   @override
   void dispose() {
     _slideController.dispose();
-    _scaleController.dispose();
     super.dispose();
+  }
+
+  void _onPhotoChanged() {
+    // Collect all photos from individual cards
+    final photoList = <String>[];
+    for (final key in _cardKeys) {
+      final cardState = key.currentState;
+      if (cardState != null && cardState.hasPhoto) {
+        photoList.add(cardState.photoFile!.path);
+      }
+    }
+    widget.onDataChanged('photos', photoList);
+  }
+
+  void _makeMainPhoto(int index) {
+    if (index == 0) return;
+    
+    final currentMainCard = _cardKeys[0].currentState;
+    final selectedCard = _cardKeys[index].currentState;
+    
+    if (currentMainCard != null && selectedCard != null && selectedCard.hasPhoto) {
+      final mainPhoto = currentMainCard.photoFile;
+      final selectedPhoto = selectedCard.photoFile;
+      
+      // Swap photos
+      currentMainCard.setPhoto(selectedPhoto);
+      selectedCard.setPhoto(mainPhoto);
+      
+      _onPhotoChanged();
+      HapticFeedback.lightImpact();
+    }
   }
   
   @override
@@ -126,7 +138,7 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
   
   Widget _buildPhotoGrid() {
     return GridView.builder(
-      key: const ValueKey('photo_grid'), // Add key to prevent rebuilds
+      key: const ValueKey('photo_grid'),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -138,276 +150,65 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
       itemCount: _maxPhotos,
       itemBuilder: (context, index) {
         return SlideTransition(
-          key: ValueKey('photo_slot_$index'),
           position: _photoAnimations[index],
-          child: _buildPhotoSlot(index),
+          child: PhotoCard(
+            key: _cardKeys[index],
+            index: index,
+            onPhotoChanged: _onPhotoChanged,
+            onMakeMain: () => _makeMainPhoto(index),
+          ),
         );
       },
     );
   }
   
-  Widget _buildPhotoSlot(int index) {
-    final hasPhoto = _photoFiles[index] != null;
-    
-    return GestureDetector(
-      key: ValueKey('photo_gesture_$index'),
-      onTap: () => hasPhoto ? _showPhotoOptions(index) : _addPhotoToSlot(index),
-      child: AnimatedContainer(
-        key: ValueKey('photo_container_$index'),
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          color: hasPhoto ? Colors.transparent : AppColors.lightGray,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-          border: Border.all(
-            color: hasPhoto ? Colors.transparent : AppColors.border,
-            width: 2,
-            style: hasPhoto ? BorderStyle.none : BorderStyle.solid,
-          ),
-        ),
-        child: hasPhoto ? _buildPhotoContainer(index) : _buildEmptySlot(index),
-      ),
-    );
-  }
-  
-  Widget _buildPhotoContainer(int index) {
-    final isLoading = _loadingPhotos.contains(index);
-    final photoFile = _photoFiles[index];
-    
-    return Stack(
-      key: ValueKey('photo_stack_$index'),
-      children: [
-        // Photo
-        ClipRRect(
-          key: ValueKey('photo_clip_$index'),
-          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-          child: Container(
-            key: ValueKey('photo_content_$index'),
-            width: double.infinity,
-            height: double.infinity,
-            child: isLoading 
-                ? Container(
-                    color: AppColors.lightGray,
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                        strokeWidth: 2,
-                      ),
-                    ),
-                  )
-                : photoFile != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-                        child: kIsWeb
-                            ? FutureBuilder<Uint8List>(
-                                future: photoFile.readAsBytes(),
-                                builder: (context, snapshot) {
-                                  if (snapshot.hasData) {
-                                    return Image.memory(
-                                      snapshot.data!,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                    );
-                                  }
-                                  return Container(
-                                    color: AppColors.lightGray,
-                                    child: const Center(
-                                      child: CircularProgressIndicator(
-                                        color: AppColors.primary,
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              )
-                            : Image.file(
-                                File(photoFile.path),
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    color: AppColors.lightGray,
-                                    child: const Icon(
-                                      Icons.broken_image,
-                                      color: AppColors.textTertiary,
-                                      size: 32,
-                                    ),
-                                  );
-                                },
-                              ),
-                      )
-                    : Container(
-                        color: AppColors.lightGray,
-                        child: const Icon(
-                          Icons.photo,
-                          color: AppColors.textTertiary,
-                          size: 32,
-                        ),
-                      ),
-          ),
-        ),
-        
-        // Overlay for better button visibility
-        if (!isLoading && photoFile != null)
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-                gradient: LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.center,
-                  colors: [
-                    Colors.black.withOpacity(0.15),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.3],
-                ),
-              ),
-            ),
-          ),
-        
-        // Primary badge (for first photo)
-        if (index == 0)
-          Positioned(
-            top: AppDimensions.spacing8,
-            left: AppDimensions.spacing8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.spacing8,
-                vertical: AppDimensions.spacing4,
-              ),
-              decoration: BoxDecoration(
-                gradient: AppColors.loveGradient,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusS),
-              ),
-              child: Text(
-                'Main',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        
-        // Remove button
-        if (!isLoading && photoFile != null)
-          Positioned(
-            top: 4,
-            right: 4,
-            child: GestureDetector(
-              onTap: () => _removePhoto(index),
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.8),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.4),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 16,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-  
-  Widget _buildEmptySlot(int index) {
-    final isFirst = index == 0;
-    
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(AppDimensions.spacing12),
-          decoration: BoxDecoration(
-            color: isFirst 
-                ? AppColors.primary.withOpacity(0.1)
-                : AppColors.gray.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            isFirst ? Icons.camera_alt : Icons.add_photo_alternate,
-            color: isFirst ? AppColors.primary : AppColors.gray,
-            size: AppDimensions.iconL,
-          ),
-        ),
-        const SizedBox(height: AppDimensions.spacing8),
-        Text(
-          isFirst ? 'Main Photo' : 'Add Photo',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: isFirst ? AppColors.primary : AppColors.textTertiary,
-            fontWeight: isFirst ? FontWeight.w600 : FontWeight.w400,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-  
   Widget _buildInstructions() {
-    return SlideTransition(
-      position: _photoAnimations[5],
-      child: Container(
-        padding: const EdgeInsets.all(AppDimensions.paddingL),
-        decoration: BoxDecoration(
-          color: AppColors.accent.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
-          border: Border.all(
-            color: AppColors.accent.withOpacity(0.2),
-            width: 1,
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.paddingL),
+      decoration: BoxDecoration(
+        color: AppColors.lightGray.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+        border: Border.all(
+          color: AppColors.border.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppDimensions.spacing8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                ),
+                child: Icon(
+                  Icons.lightbulb_outline,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppDimensions.spacing12),
+              Text(
+                'Photo Tips',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
           ),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(AppDimensions.paddingS),
-                  decoration: BoxDecoration(
-                    color: AppColors.accent.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.tips_and_updates,
-                    color: AppColors.accent,
-                    size: AppDimensions.iconS,
-                  ),
-                ),
-                const SizedBox(width: AppDimensions.spacing12),
-                Expanded(
-                  child: Text(
-                    'Photo Tips',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: AppColors.accent,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppDimensions.spacing12),
-            _buildTip('📸', 'Tap empty slots above to add photos'),
-            const SizedBox(height: AppDimensions.spacing8),
-            _buildTip('😊', 'Choose photos that show your face clearly'),
-            const SizedBox(height: AppDimensions.spacing8),
-            _buildTip('🌟', 'Show your personality and interests'),
-            const SizedBox(height: AppDimensions.spacing8),
-            _buildTip('⛪', 'Include photos from church or faith activities'),
-          ],
-        ),
+          const SizedBox(height: AppDimensions.spacing16),
+          _buildTip('📸', 'First photo will be your main profile picture'),
+          const SizedBox(height: AppDimensions.spacing8),
+          _buildTip('😊', 'Use clear, recent photos that show your face'),
+          const SizedBox(height: AppDimensions.spacing8),
+          _buildTip('🌟', 'Show your personality and interests'),
+          const SizedBox(height: AppDimensions.spacing8),
+          _buildTip('⛪', 'Include photos from church or faith activities'),
+        ],
       ),
     );
   }
@@ -432,18 +233,48 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
       ],
     );
   }
-  
+}
 
-  
-  // Photo management methods
-  void _addPhotoToSlot(int targetIndex) async {
-    if (_photoFiles[targetIndex] != null || _loadingPhotos.contains(targetIndex)) return;
+// Individual Photo Card Widget
+class PhotoCard extends StatefulWidget {
+  final int index;
+  final VoidCallback onPhotoChanged;
+  final VoidCallback onMakeMain;
+
+  const PhotoCard({
+    super.key,
+    required this.index,
+    required this.onPhotoChanged,
+    required this.onMakeMain,
+  });
+
+  @override
+  State<PhotoCard> createState() => _PhotoCardState();
+}
+
+class _PhotoCardState extends State<PhotoCard> {
+  final ImagePicker _picker = ImagePicker();
+  XFile? _photoFile;
+  bool _isLoading = false;
+
+  bool get hasPhoto => _photoFile != null;
+  XFile? get photoFile => _photoFile;
+
+  void setPhoto(XFile? photo) {
+    if (mounted) {
+      setState(() {
+        _photoFile = photo;
+      });
+    }
+  }
+
+  void _addPhoto() async {
+    if (_isLoading) return;
     
     HapticFeedback.lightImpact();
     
-    // Show loading state
     setState(() {
-      _loadingPhotos.add(targetIndex);
+      _isLoading = true;
     });
     
     try {
@@ -456,161 +287,94 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
       
       if (image != null) {
         setState(() {
-          _photoFiles[targetIndex] = image;
-          _loadingPhotos.remove(targetIndex);
+          _photoFile = image;
+          _isLoading = false;
         });
         
-        // Update parent data
-        final photoList = _photoFiles.where((file) => file != null).map((file) => file!.path).toList();
-        widget.onDataChanged('photos', photoList);
-        
-        // Show success feedback
+        widget.onPhotoChanged();
         HapticFeedback.mediumImpact();
       } else {
-        // User cancelled, remove loading state
         setState(() {
-          _loadingPhotos.remove(targetIndex);
+          _isLoading = false;
         });
       }
     } catch (e) {
-      // Remove loading state on error
       setState(() {
-        _loadingPhotos.remove(targetIndex);
+        _isLoading = false;
       });
       _showErrorSnackBar('Failed to add photo. Please try again.');
     }
   }
 
-
-  
-  void _removePhoto(int index) {
+  void _removePhoto() {
     HapticFeedback.mediumImpact();
-    
     setState(() {
-      _photoFiles[index] = null; // Set to null instead of removing
-      _loadingPhotos.remove(index);
+      _photoFile = null;
     });
-    
-    final photoList = _photoFiles.where((file) => file != null).map((file) => file!.path).toList();
-    widget.onDataChanged('photos', photoList);
+    widget.onPhotoChanged();
   }
-  
-  void _showPhotoOptions(int index) {
+
+  void _showPhotoOptions() {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: const BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppDimensions.radiusL),
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(AppDimensions.radiusL),
+            topRight: Radius.circular(AppDimensions.radiusL),
           ),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: AppDimensions.spacing8),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.gray,
-                borderRadius: BorderRadius.circular(2),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: AppDimensions.spacing8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const SizedBox(height: AppDimensions.spacing24),
-            
-            ListTile(
-              leading: const Icon(Icons.star, color: AppColors.accent),
-              title: const Text('Make Main Photo'),
-              onTap: () {
-                _makeMainPhoto(index);
-                Navigator.pop(context);
-              },
-            ),
-            
-            ListTile(
-              leading: const Icon(Icons.edit, color: AppColors.primary),
-              title: const Text('Replace Photo'),
-              onTap: () {
-                Navigator.pop(context);
-                _replacePhoto(index);
-              },
-            ),
-            
-            ListTile(
-              leading: const Icon(Icons.delete, color: AppColors.error),
-              title: Text(
-                'Remove Photo',
-                style: TextStyle(color: AppColors.error),
+              const SizedBox(height: AppDimensions.spacing24),
+              if (widget.index != 0)
+                ListTile(
+                  leading: const Icon(Icons.star_outline, color: AppColors.primary),
+                  title: const Text('Set as main photo'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    widget.onMakeMain();
+                  },
+                ),
+              ListTile(
+                leading: const Icon(Icons.edit, color: AppColors.primary),
+                title: const Text('Replace photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _addPhoto();
+                },
               ),
-              onTap: () {
-                Navigator.pop(context);
-                _removePhoto(index);
-              },
-            ),
-            
-            const SizedBox(height: AppDimensions.spacing24),
-          ],
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: AppColors.error),
+                title: const Text('Remove photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _removePhoto();
+                },
+              ),
+              const SizedBox(height: AppDimensions.spacing16),
+            ],
+          ),
         ),
       ),
     );
   }
-  
-  void _makeMainPhoto(int index) {
-    if (index == 0 || _photoFiles[index] == null) return;
-    
-    setState(() {
-      final photo = _photoFiles[index];
-      final currentMain = _photoFiles[0];
-      _photoFiles[0] = photo;
-      _photoFiles[index] = currentMain;
-    });
-    
-    final photoList = _photoFiles.where((file) => file != null).map((file) => file!.path).toList();
-    widget.onDataChanged('photos', photoList);
-    HapticFeedback.lightImpact();
-  }
-  
-  void _replacePhoto(int index) async {
-    // Show loading state
-    setState(() {
-      _loadingPhotos.add(index);
-    });
-    
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
-      );
-      
-      if (image != null) {
-        setState(() {
-          _photoFiles[index] = image;
-          _loadingPhotos.remove(index);
-        });
-        
-        final photoList = _photoFiles.where((file) => file != null).map((file) => file!.path).toList();
-        widget.onDataChanged('photos', photoList);
-        HapticFeedback.mediumImpact();
-      } else {
-        // User cancelled, remove loading state
-        setState(() {
-          _loadingPhotos.remove(index);
-        });
-      }
-    } catch (e) {
-      // Remove loading state on error
-      setState(() {
-        _loadingPhotos.remove(index);
-      });
-      _showErrorSnackBar('Failed to replace photo. Please try again.');
-    }
-  }
-  
+
   void _showErrorSnackBar(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -620,6 +384,210 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
           borderRadius: BorderRadius.circular(AppDimensions.radiusM),
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: hasPhoto ? _showPhotoOptions : _addPhoto,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: hasPhoto ? Colors.transparent : AppColors.lightGray,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+          border: Border.all(
+            color: hasPhoto ? Colors.transparent : AppColors.border,
+            width: 2,
+            style: hasPhoto ? BorderStyle.none : BorderStyle.solid,
+          ),
+        ),
+        child: hasPhoto ? _buildPhotoContainer() : _buildEmptySlot(),
+      ),
+    );
+  }
+
+  Widget _buildPhotoContainer() {
+    return Stack(
+      children: [
+        // Photo
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            child: _isLoading 
+                ? Container(
+                    color: AppColors.lightGray,
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  )
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                    child: kIsWeb
+                        ? FutureBuilder<Uint8List>(
+                            future: _photoFile!.readAsBytes(),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData) {
+                                return Image.memory(
+                                  snapshot.data!,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                );
+                              }
+                              return Container(
+                                color: AppColors.lightGray,
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    color: AppColors.primary,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                        : Image.file(
+                            File(_photoFile!.path),
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
+                  ),
+          ),
+        ),
+        
+        // Main photo indicator
+        if (widget.index == 0)
+          Positioned(
+            top: AppDimensions.spacing8,
+            left: AppDimensions.spacing8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.spacing8,
+                vertical: AppDimensions.spacing4,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.star,
+                    color: Colors.white,
+                    size: 12,
+                  ),
+                  const SizedBox(width: AppDimensions.spacing4),
+                  Text(
+                    'Main',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        
+        // Remove button
+        Positioned(
+          top: AppDimensions.spacing8,
+          right: AppDimensions.spacing8,
+          child: Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.7),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.close,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
+        ),
+        
+        // Gradient overlay for better button visibility
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.1),
+                  Colors.transparent,
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.1),
+                ],
+                stops: const [0.0, 0.3, 0.7, 1.0],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptySlot() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      child: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+                strokeWidth: 2,
+              ),
+            )
+          : Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppDimensions.spacing12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.add_a_photo_outlined,
+                    color: AppColors.primary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(height: AppDimensions.spacing8),
+                Text(
+                  widget.index == 0 ? 'Main Photo' : 'Add Photo',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
     );
   }
 } 

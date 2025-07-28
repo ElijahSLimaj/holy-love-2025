@@ -329,9 +329,9 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
               animation: _chipAnimations[index],
               builder: (context, child) {
                 return Transform.scale(
-                  scale: _chipAnimations[index].value,
+                  scale: _chipAnimations[index].value.clamp(0.0, 1.0),
                   child: Opacity(
-                    opacity: _chipAnimations[index].value,
+                    opacity: _chipAnimations[index].value.clamp(0.0, 1.0),
                     child: _buildInterestChip(interest),
                   ),
                 );
