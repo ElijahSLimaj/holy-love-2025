@@ -247,6 +247,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   Widget _buildPageView() {
     return PageView(
       controller: _pageController,
+      physics: const NeverScrollableScrollPhysics(), // Disable swipe navigation
       onPageChanged: (index) {
         setState(() {
           _currentIndex = index;

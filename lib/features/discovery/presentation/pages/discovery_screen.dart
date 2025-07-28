@@ -3,6 +3,9 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../shared/widgets/custom_button.dart';
+import '../../data/mock_users.dart';
+import '../../data/models/user_profile.dart';
+import '../widgets/swipeable_card_stack.dart';
 
 class DiscoveryScreen extends StatefulWidget {
   const DiscoveryScreen({super.key});
@@ -18,11 +21,18 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _scaleAnimation;
+  
+  List<UserProfile> _profiles = [];
+  bool _isLoading = true;
+  
+  // Key to access the swipeable card stack
+  final GlobalKey<SwipeableCardStackState> _cardStackKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     _setupAnimations();
+    _loadProfiles();
     _startAnimations();
   }
 
@@ -73,6 +83,37 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     }
   }
 
+  void _loadProfiles() async {
+    // Simulate loading delay
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) {
+      setState(() {
+        _profiles = MockUsers.getDiscoveryProfiles();
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _onLike(UserProfile profile) {
+    print('Liked: ${profile.firstName}');
+    // TODO: Handle like action
+  }
+
+  void _onPass(UserProfile profile) {
+    print('Passed: ${profile.firstName}');
+    // TODO: Handle pass action
+  }
+
+  void _onCardTap(UserProfile profile) {
+    print('Tapped: ${profile.firstName}');
+    // TODO: Navigate to profile details
+  }
+
+  void _onStackEmpty() {
+    print('No more profiles');
+    // TODO: Load more profiles or show empty state
+  }
+
   @override
   void dispose() {
     _fadeController.dispose();
@@ -97,16 +138,29 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   }
 
   Widget _buildContent() {
-    return SingleChildScrollView(
+    if (_isLoading) {
+      return _buildLoadingState();
+    }
+
+    return Padding(
       padding: const EdgeInsets.all(AppDimensions.paddingL),
       child: Column(
         children: [
           const SizedBox(height: AppDimensions.spacing20),
           _buildWelcomeSection(),
           const SizedBox(height: AppDimensions.spacing32),
-          _buildDiscoveryCard(),
+          Expanded(
+            child: SwipeableCardStack(
+              key: _cardStackKey,
+              profiles: _profiles,
+              onLike: _onLike,
+              onPass: _onPass,
+              onCardTap: _onCardTap,
+              onStackEmpty: _onStackEmpty,
+            ),
+          ),
           const SizedBox(height: AppDimensions.spacing24),
-          _buildQuickActions(),
+          _buildActionButtons(),
         ],
       ),
     );
@@ -138,188 +192,101 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
-  Widget _buildDiscoveryCard() {
-    return AnimatedBuilder(
-      animation: _cardController,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value.clamp(0.0, 1.0),
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: Container(
-              width: double.infinity,
-              height: 400,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.primaryLight.withOpacity(0.1),
-                    AppColors.secondaryLight.withOpacity(0.1),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
-                border: Border.all(
-                  color: AppColors.primary.withOpacity(0.2),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppDimensions.paddingL),
-                    decoration: BoxDecoration(
-                      gradient: AppColors.loveGradient,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.favorite,
-                      color: AppColors.white,
-                      size: 48,
-                    ),
-                  ),
-                  const SizedBox(height: AppDimensions.spacing24),
-                  Text(
-                    'Coming Soon!',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: AppDimensions.spacing12),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.paddingL,
-                    ),
-                    child: Text(
-                      'Swipe through profiles, find your perfect match, and start meaningful conversations.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
-              ),
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppDimensions.paddingL),
+            decoration: BoxDecoration(
+              gradient: AppColors.loveGradient,
+              shape: BoxShape.circle,
+            ),
+            child: const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
             ),
           ),
-        );
-      },
+          const SizedBox(height: AppDimensions.spacing24),
+          Text(
+            'Finding Your Matches...',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.spacing12),
+          Text(
+            'We\'re preparing amazing profiles just for you!',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildQuickActions() {
-    return Column(
+  Widget _buildActionButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionCard(
-                icon: Icons.tune,
-                title: 'Preferences',
-                subtitle: 'Set your match criteria',
-                gradient: const LinearGradient(
-                  colors: [AppColors.accent, AppColors.accentLight],
-                ),
-                onTap: () {
-                  // TODO: Navigate to preferences
-                },
-              ),
-            ),
-            const SizedBox(width: AppDimensions.spacing16),
-            Expanded(
-              child: _buildActionCard(
-                icon: Icons.location_on,
-                title: 'Distance',
-                subtitle: 'Adjust search radius',
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.primaryLight],
-                ),
-                onTap: () {
-                  // TODO: Navigate to location settings
-                },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppDimensions.spacing16),
-        CustomButton(
-          text: 'Start Discovering',
-          onPressed: () {
-            // TODO: Navigate to swipe cards
+        _buildActionButton(
+          icon: Icons.close,
+          color: AppColors.error,
+          onTap: () {
+            _cardStackKey.currentState?.swipeLeft();
           },
-          variant: ButtonVariant.primary,
-          isFullWidth: true,
+        ),
+        _buildActionButton(
+          icon: Icons.tune,
+          color: AppColors.accent,
+          onTap: () {
+            // TODO: Open filters/preferences
+          },
+        ),
+        _buildActionButton(
+          icon: Icons.favorite,
+          color: AppColors.secondary,
+          onTap: () {
+            _cardStackKey.currentState?.swipeRight();
+          },
+          isLarge: true,
         ),
       ],
     );
   }
 
-  Widget _buildActionCard({
+  Widget _buildActionButton({
     required IconData icon,
-    required String title,
-    required String subtitle,
-    required LinearGradient gradient,
+    required Color color,
     required VoidCallback onTap,
+    bool isLarge = false,
   }) {
+    final size = isLarge ? 64.0 : 56.0;
+    final iconSize = isLarge ? 32.0 : 24.0;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(AppDimensions.paddingM),
+        width: size,
+        height: size,
         decoration: BoxDecoration(
-          gradient: gradient.colors.first.withOpacity(0.1) != null
-              ? LinearGradient(
-                  colors: gradient.colors
-                      .map((color) => color.withOpacity(0.1))
-                      .toList(),
-                )
-              : null,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
-          border: Border.all(
-            color: gradient.colors.first.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppDimensions.spacing12),
-              decoration: BoxDecoration(
-                gradient: gradient,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-              ),
-              child: Icon(
-                icon,
-                color: AppColors.white,
-                size: 24,
-              ),
-            ),
-            const SizedBox(height: AppDimensions.spacing12),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppDimensions.spacing4),
-            Text(
-              subtitle,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
+          color: color,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
+        ),
+        child: Icon(
+          icon,
+          color: AppColors.white,
+          size: iconSize,
         ),
       ),
     );
