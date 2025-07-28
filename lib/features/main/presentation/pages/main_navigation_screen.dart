@@ -21,10 +21,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   late PageController _pageController;
   late AnimationController _navigationController;
   late AnimationController _fadeController;
+  late AnimationController _toggleAnimationController;
   late List<Animation<double>> _tabAnimations;
   late Animation<double> _fadeAnimation;
+  late Animation<double> _toggleScaleAnimation;
   
   int _currentIndex = 0;
+  ViewMode _currentViewMode = ViewMode.list;
   
   final List<NavigationTab> _tabs = [
     NavigationTab(
@@ -77,6 +80,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
+    _toggleAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
   }
 
   void _setupAnimations() {
@@ -100,6 +107,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _fadeController,
+      curve: Curves.easeInOut,
+    ));
+
+    _toggleScaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _toggleAnimationController,
       curve: Curves.easeInOut,
     ));
   }
@@ -128,11 +143,27 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     );
   }
 
+  void _toggleViewMode() {
+    if (_currentIndex != 0) return; // Only works on discovery screen
+    
+    HapticFeedback.mediumImpact();
+    _toggleAnimationController.forward().then((_) {
+      _toggleAnimationController.reverse();
+    });
+    
+    setState(() {
+      _currentViewMode = _currentViewMode == ViewMode.list 
+          ? ViewMode.swipe 
+          : ViewMode.list;
+    });
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
     _navigationController.dispose();
     _fadeController.dispose();
+    _toggleAnimationController.dispose();
     super.dispose();
   }
 
@@ -203,6 +234,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
             ),
           ),
           const Spacer(),
+          _buildViewToggle(),
+          const SizedBox(width: AppDimensions.spacing8),
           _buildHeaderAction(
             icon: Icons.notifications_outlined,
             onTap: () {
@@ -220,6 +253,39 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildViewToggle() {
+    // Only show on discovery screen
+    if (_currentIndex != 0) {
+      return const SizedBox.shrink();
+    }
+
+    return AnimatedBuilder(
+      animation: _toggleAnimationController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _toggleScaleAnimation.value,
+          child: GestureDetector(
+            onTap: _toggleViewMode,
+            child: Container(
+              padding: const EdgeInsets.all(AppDimensions.spacing8),
+              decoration: BoxDecoration(
+                gradient: AppColors.loveGradient,
+                borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+              ),
+              child: Icon(
+                _currentViewMode == ViewMode.list 
+                    ? Icons.view_carousel_outlined
+                    : Icons.view_list_outlined,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -254,7 +320,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         });
       },
       children: [
-        const DiscoveryScreen(),
+        DiscoveryScreen(viewMode: _currentViewMode),
         const MatchesScreen(),
         const MessagesScreen(),
         const ProfileScreen(),
