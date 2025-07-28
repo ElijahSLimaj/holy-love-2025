@@ -172,7 +172,8 @@ class AppTheme {
   static ElevatedButtonThemeData get _elevatedButtonTheme {
     return ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
+        // Use transparent background so gradient can show through
+        backgroundColor: Colors.transparent,
         foregroundColor: AppColors.textOnPrimary,
         elevation: 0,
         shadowColor: Colors.transparent,

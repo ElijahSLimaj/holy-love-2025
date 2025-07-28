@@ -3,6 +3,9 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../shared/widgets/custom_button.dart';
+import 'sign_up_screen.dart';
+import 'sign_in_screen.dart';
+import 'profile_creation_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -109,11 +112,8 @@ class WelcomeScreen extends StatelessWidget {
         // Get Started Button
         CustomButton(
           text: AppStrings.getStarted,
-          onPressed: () {
-            // TODO: Navigate to sign up
-            _showComingSoon(context);
-          },
-          variant: ButtonVariant.gradient,
+          onPressed: () => _navigateToSignUp(context),
+          variant: ButtonVariant.primary,
         ),
         
         const SizedBox(height: AppDimensions.spacing16),
@@ -121,10 +121,7 @@ class WelcomeScreen extends StatelessWidget {
         // Continue with Google
         CustomButton(
           text: AppStrings.continueWithGoogle,
-          onPressed: () {
-            // TODO: Implement Google sign in
-            _showComingSoon(context);
-          },
+          onPressed: () => _navigateToPhotoUpload(context),
           variant: ButtonVariant.secondary,
           icon: const Icon(
             Icons.g_mobiledata,
@@ -165,10 +162,7 @@ class WelcomeScreen extends StatelessWidget {
         ),
         const SizedBox(width: AppDimensions.spacing8),
         TextButton(
-          onPressed: () {
-            // TODO: Navigate to sign in
-            _showComingSoon(context);
-          },
+          onPressed: () => _navigateToSignIn(context),
           style: TextButton.styleFrom(
             padding: EdgeInsets.zero,
             minimumSize: Size.zero,
@@ -183,6 +177,72 @@ class WelcomeScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  void _navigateToSignUp(BuildContext context) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const SignUpScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1.0, 0.0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 400),
+      ),
+    );
+  }
+
+  void _navigateToSignIn(BuildContext context) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const SignInScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1.0, 0.0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 400),
+      ),
+    );
+  }
+
+  void _navigateToPhotoUpload(BuildContext context) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const ProfileCreationScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1.0, 0.0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 400),
+      ),
     );
   }
 

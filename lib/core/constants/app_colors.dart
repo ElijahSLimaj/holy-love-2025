@@ -64,7 +64,7 @@ class AppColors {
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primaryLight, primary],
+    colors: [primaryLight, secondaryLight], // Use love gradient colors
   );
   
   static const LinearGradient secondaryGradient = LinearGradient(

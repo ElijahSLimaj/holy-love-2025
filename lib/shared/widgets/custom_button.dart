@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import 'gradient_button_wrapper.dart';
 
 enum ButtonVariant {
   primary,
@@ -67,10 +68,16 @@ class CustomButton extends StatelessWidget {
   }
 
   Widget _buildPrimaryButton(ThemeData theme) {
+    // Use gradient for primary buttons unless a custom color is specified
+    if (customColor == null) {
+      return _buildGradientButton(theme);
+    }
+    
+    // Fallback to solid color when custom color is provided
     return ElevatedButton(
       onPressed: isLoading ? null : onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: customColor ?? AppColors.primary,
+        backgroundColor: customColor,
         foregroundColor: AppColors.textOnPrimary,
         elevation: 0,
         shadowColor: Colors.transparent,
@@ -141,27 +148,17 @@ class CustomButton extends StatelessWidget {
   }
 
   Widget _buildGradientButton(ThemeData theme) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-        boxShadow: AppColors.buttonShadow,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isLoading ? null : onPressed,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-          child: Container(
-            padding: _getButtonPadding(),
-            alignment: Alignment.center,
-            child: DefaultTextStyle(
-              style: _getTextStyle().copyWith(
-                color: AppColors.textOnPrimary,
-              ),
-              child: _buildButtonContent(),
-            ),
+    return GradientButtonWrapper(
+      onPressed: isLoading ? null : onPressed,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+      padding: _getButtonPadding(),
+      child: Align(
+        alignment: Alignment.center,
+        child: DefaultTextStyle(
+          style: _getTextStyle().copyWith(
+            color: AppColors.textOnPrimary,
           ),
+          child: _buildButtonContent(),
         ),
       ),
     );
