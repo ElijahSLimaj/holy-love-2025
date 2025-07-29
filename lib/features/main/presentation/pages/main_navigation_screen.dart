@@ -30,33 +30,33 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   ViewMode _currentViewMode = ViewMode.list;
   
   final List<NavigationTab> _tabs = [
-    NavigationTab(
+    const NavigationTab(
       icon: Icons.favorite_outline,
       activeIcon: Icons.favorite,
       label: 'Discovery',
       gradient: AppColors.loveGradient,
     ),
-    NavigationTab(
+    const NavigationTab(
       icon: Icons.people_outline,
       activeIcon: Icons.people,
       label: 'Matches',
-      gradient: const LinearGradient(
+      gradient: LinearGradient(
         colors: [AppColors.accent, AppColors.accentLight],
       ),
     ),
-    NavigationTab(
+    const NavigationTab(
       icon: Icons.chat_bubble_outline,
       activeIcon: Icons.chat_bubble,
       label: 'Messages',
-      gradient: const LinearGradient(
+      gradient: LinearGradient(
         colors: [AppColors.primary, AppColors.primaryLight],
       ),
     ),
-    NavigationTab(
+    const NavigationTab(
       icon: Icons.person_outline,
       activeIcon: Icons.person,
       label: 'Profile',
-      gradient: const LinearGradient(
+      gradient: LinearGradient(
         colors: [AppColors.secondary, AppColors.secondaryLight],
       ),
     ),
@@ -205,7 +205,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         vertical: AppDimensions.paddingM,
       ),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
