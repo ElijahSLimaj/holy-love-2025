@@ -176,21 +176,21 @@ class _MessagesScreenState extends State<MessagesScreen>
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: AnimatedBuilder(
-          animation: _fadeAnimation,
-          builder: (context, child) {
+        animation: _fadeAnimation,
+        builder: (context, child) {
             final opacityValue = _fadeAnimation.value.clamp(0.0, 1.0);
-            return Opacity(
+          return Opacity(
               opacity: opacityValue,
               child: Column(
                 children: [
                   _buildHeader(),
                   Expanded(
-                    child: _buildContent(),
+            child: _buildContent(),
                   ),
                 ],
               ),
-            );
-          },
+          );
+        },
         ),
       ),
     );
@@ -224,13 +224,13 @@ class _MessagesScreenState extends State<MessagesScreen>
                 ],
               ),
               child: Row(
-                children: [
-                  Container(
+        children: [
+          Container(
                     padding: const EdgeInsets.all(AppDimensions.paddingS),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.primary, AppColors.primaryLight],
-                      ),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.primary, AppColors.primaryLight],
+              ),
                       borderRadius: BorderRadius.circular(AppDimensions.radiusM),
                       boxShadow: AppColors.cardShadow,
                     ),
@@ -260,9 +260,9 @@ class _MessagesScreenState extends State<MessagesScreen>
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
+                ),
+              ],
+            ),
             ),
           ),
         );
@@ -285,7 +285,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                 children: [
                   const SizedBox(height: AppDimensions.spacing24),
                   _buildActiveConversations(),
-                  const SizedBox(height: AppDimensions.spacing24),
+          const SizedBox(height: AppDimensions.spacing24),
                 ],
               ),
             ),
@@ -328,9 +328,9 @@ class _MessagesScreenState extends State<MessagesScreen>
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+            ),
+          ),
+        ],
               ),
             ),
           ],

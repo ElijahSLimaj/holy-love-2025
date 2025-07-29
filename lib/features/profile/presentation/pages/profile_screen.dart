@@ -139,20 +139,20 @@ class _ProfileScreenState extends State<ProfileScreen>
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: AnimatedBuilder(
-          animation: _fadeAnimation,
-          builder: (context, child) {
-            return Opacity(
-              opacity: _fadeAnimation.value.clamp(0.0, 1.0),
+        animation: _fadeAnimation,
+        builder: (context, child) {
+          return Opacity(
+            opacity: _fadeAnimation.value.clamp(0.0, 1.0),
               child: Column(
                 children: [
                   _buildHeader(),
                   Expanded(
-                    child: _buildContent(),
+            child: _buildContent(),
                   ),
                 ],
               ),
-            );
-          },
+          );
+        },
         ),
       ),
     );
@@ -185,10 +185,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                 ],
               ),
-              child: Column(
+      child: Column(
                 children: [
                   Row(
-                    children: [
+        children: [
                       _buildProfileAvatar(),
                       const SizedBox(width: AppDimensions.spacing16),
                       Expanded(
@@ -216,25 +216,25 @@ class _ProfileScreenState extends State<ProfileScreen>
           height: AppDimensions.avatarXL,
           decoration: BoxDecoration(
             color: AppColors.lightGray,
-            shape: BoxShape.circle,
+              shape: BoxShape.circle,
             border: Border.all(
               color: AppColors.primary.withOpacity(0.3),
               width: 3,
             ),
-            boxShadow: [
-              BoxShadow(
+              boxShadow: [
+                BoxShadow(
                 color: AppColors.primary.withOpacity(0.2),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.person,
-            size: 48,
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.person,
+              size: 48,
             color: AppColors.textSecondary,
+            ),
           ),
-        ),
         if (_currentUser['isVerified'])
           Positioned(
             bottom: 0,
@@ -295,7 +295,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                   borderRadius: BorderRadius.circular(AppDimensions.radiusS),
                 ),
-                child: Text(
+            child: Text(
                   'Premium',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: AppColors.white,

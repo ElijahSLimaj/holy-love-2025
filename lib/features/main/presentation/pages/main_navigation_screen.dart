@@ -8,6 +8,7 @@ import '../../../discovery/presentation/pages/discovery_screen.dart';
 import '../../../matches/presentation/pages/matches_screen.dart';
 import '../../../messages/presentation/pages/messages_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
+import '../../../notifications/presentation/pages/notifications_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -236,13 +237,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
           const Spacer(),
           _buildViewToggle(),
           const SizedBox(width: AppDimensions.spacing8),
-          _buildHeaderAction(
-            icon: Icons.notifications_outlined,
-            onTap: () {
-              HapticFeedback.lightImpact();
-              // TODO: Show notifications
-            },
-          ),
+          _buildNotificationAction(),
           const SizedBox(width: AppDimensions.spacing8),
           _buildHeaderAction(
             icon: Icons.tune,
@@ -286,6 +281,78 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildNotificationAction() {
+    // Mock unread count - in a real app this would come from a state management solution
+    const int unreadCount = 3;
+    
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Navigator.of(context).push(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const NotificationsScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0.0, -1.0),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                )),
+                child: child,
+              );
+            },
+            transitionDuration: const Duration(milliseconds: 400),
+          ),
+        );
+      },
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppDimensions.spacing8),
+            decoration: BoxDecoration(
+              color: AppColors.lightGray.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+            ),
+            child: const Icon(
+              Icons.notifications_outlined,
+              color: AppColors.textSecondary,
+              size: 20,
+            ),
+          ),
+          if (unreadCount > 0)
+            Positioned(
+              top: -2,
+              right: -2,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  gradient: AppColors.loveGradient,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                constraints: const BoxConstraints(
+                  minWidth: 18,
+                  minHeight: 18,
+                ),
+                child: Text(
+                  unreadCount > 99 ? '99+' : unreadCount.toString(),
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
