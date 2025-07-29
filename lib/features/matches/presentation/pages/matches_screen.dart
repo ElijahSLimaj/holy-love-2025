@@ -8,6 +8,7 @@ import '../../../discovery/data/mock_users.dart';
 import '../widgets/match_card.dart';
 import '../widgets/conversation_tile.dart';
 import '../../../messages/presentation/pages/chat_screen.dart';
+import '../../../discovery/presentation/pages/member_profile_screen.dart';
 
 class MatchesScreen extends StatefulWidget {
   const MatchesScreen({super.key});
@@ -439,15 +440,51 @@ class _MatchesScreenState extends State<MatchesScreen>
 
   void _handleMatchTap(UserProfile user) {
     HapticFeedback.lightImpact();
-    // TODO: Navigate to detailed match view
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Viewing ${user.firstName}\'s profile'),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-        ),
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            MemberProfileScreen(
+              user: user,
+              onLike: () {
+                // Handle like action from profile view
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('You liked ${user.firstName}!'),
+                    backgroundColor: AppColors.success,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                    ),
+                  ),
+                );
+              },
+              onPass: () {
+                // Handle pass action from profile view
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('You passed on ${user.firstName}'),
+                    backgroundColor: AppColors.textSecondary,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                    ),
+                  ),
+                );
+              },
+            ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 1.0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 500),
       ),
     );
   }

@@ -7,6 +7,7 @@ import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../widgets/swipeable_card_stack.dart';
 import '../../../../shared/widgets/custom_button.dart';
+import 'member_profile_screen.dart';
 
 enum ViewMode { list, swipe }
 
@@ -118,7 +119,29 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
   void _onProfileTap(UserProfile profile) {
     HapticFeedback.selectionClick();
-    // TODO: Navigate to detailed profile view
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            MemberProfileScreen(
+              user: profile,
+              onLike: () => _onLike(profile),
+              onPass: () => _onPass(profile),
+            ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 1.0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
   }
 
   void _onStackEmpty() {
