@@ -7,6 +7,9 @@ import '../../../../shared/widgets/custom_button.dart';
 import '../widgets/profile_stats_card.dart';
 import '../widgets/profile_completion_card.dart';
 import '../widgets/settings_tile.dart';
+import '../../../settings/presentation/pages/notification_settings_screen.dart';
+import '../../../settings/presentation/pages/privacy_settings_screen.dart';
+import '../../../settings/presentation/pages/help_support_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -471,14 +474,56 @@ class _ProfileScreenState extends State<ProfileScreen>
         'title': AppStrings.notificationSettings,
         'subtitle': 'Manage your notification preferences',
         'color': AppColors.secondary,
-        'onTap': () => _showComingSoon('Notification settings'),
+        'onTap': () {
+          HapticFeedback.lightImpact();
+          Navigator.of(context).push(
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  const NotificationSettingsScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0.0, 1.0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  )),
+                  child: child,
+                );
+              },
+              transitionDuration: const Duration(milliseconds: 400),
+            ),
+          );
+        },
       },
       {
         'icon': Icons.security,
         'title': AppStrings.privacySettings,
         'subtitle': 'Control who can see your profile',
         'color': AppColors.accent,
-        'onTap': () => _showComingSoon('Privacy settings'),
+        'onTap': () {
+          HapticFeedback.lightImpact();
+          Navigator.of(context).push(
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  const PrivacySettingsScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0.0, 1.0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  )),
+                  child: child,
+                );
+              },
+              transitionDuration: const Duration(milliseconds: 400),
+            ),
+          );
+        },
       },
       {
         'icon': Icons.star,
@@ -492,7 +537,28 @@ class _ProfileScreenState extends State<ProfileScreen>
         'title': AppStrings.helpSupport,
         'subtitle': 'Get help or contact support',
         'color': AppColors.info,
-        'onTap': () => _showComingSoon('Help & support'),
+        'onTap': () {
+          HapticFeedback.lightImpact();
+          Navigator.of(context).push(
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  const HelpSupportScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0.0, 1.0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  )),
+                  child: child,
+                );
+              },
+              transitionDuration: const Duration(milliseconds: 400),
+            ),
+          );
+        },
       },
     ];
 
