@@ -9,6 +9,7 @@ import '../../../matches/presentation/pages/matches_screen.dart';
 import '../../../messages/presentation/pages/messages_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
 import '../../../notifications/presentation/pages/notifications_screen.dart';
+import '../../../discovery/presentation/pages/discovery_filters_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -239,13 +240,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
           const SizedBox(width: AppDimensions.spacing8),
           _buildNotificationAction(),
           const SizedBox(width: AppDimensions.spacing8),
-          _buildHeaderAction(
-            icon: Icons.tune,
-            onTap: () {
-              HapticFeedback.lightImpact();
-              // TODO: Show filters/settings
-            },
-          ),
+          _buildFilterAction(),
         ],
       ),
     );
@@ -356,20 +351,46 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     );
   }
 
-  Widget _buildHeaderAction({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildFilterAction() {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () async {
+        HapticFeedback.lightImpact();
+        
+        // Show filter screen as modal
+        final FilterCriteria? result = await showModalBottomSheet<FilterCriteria>(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          barrierColor: AppColors.primary.withOpacity(0.2),
+          builder: (context) => const DiscoveryFiltersScreen(),
+        );
+        
+        if (result != null) {
+          // Handle filter result - in a real app this would update the discovery results
+          // For now, just show a snackbar
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Filters applied successfully!'),
+                backgroundColor: AppColors.success,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                ),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      },
       child: Container(
         padding: const EdgeInsets.all(AppDimensions.spacing8),
         decoration: BoxDecoration(
           color: AppColors.lightGray.withOpacity(0.5),
           borderRadius: BorderRadius.circular(AppDimensions.radiusS),
         ),
-        child: Icon(
-          icon,
+        child: const Icon(
+          Icons.tune,
           color: AppColors.textSecondary,
           size: 20,
         ),
