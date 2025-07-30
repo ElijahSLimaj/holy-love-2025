@@ -3,13 +3,13 @@ import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../shared/widgets/custom_button.dart';
 import '../widgets/profile_stats_card.dart';
 import '../widgets/profile_completion_card.dart';
 import '../widgets/settings_tile.dart';
 import '../../../settings/presentation/pages/notification_settings_screen.dart';
 import '../../../settings/presentation/pages/privacy_settings_screen.dart';
 import '../../../settings/presentation/pages/help_support_screen.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -331,8 +331,25 @@ class _ProfileScreenState extends State<ProfileScreen>
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        // TODO: Navigate to edit profile
-        _showComingSoon('Profile editing');
+        Navigator.of(context).push(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const EditProfileScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1.0, 0.0),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                )),
+                child: child,
+              );
+            },
+            transitionDuration: const Duration(milliseconds: 400),
+          ),
+        );
       },
       child: Container(
         padding: const EdgeInsets.all(AppDimensions.paddingS),
@@ -467,7 +484,28 @@ class _ProfileScreenState extends State<ProfileScreen>
         'title': AppStrings.editProfile,
         'subtitle': 'Update your photos, bio, and preferences',
         'color': AppColors.primary,
-        'onTap': () => _showComingSoon('Edit profile'),
+        'onTap': () {
+          HapticFeedback.lightImpact();
+          Navigator.of(context).push(
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  const EditProfileScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1.0, 0.0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  )),
+                  child: child,
+                );
+              },
+              transitionDuration: const Duration(milliseconds: 400),
+            ),
+          );
+        },
       },
       {
         'icon': Icons.notifications,
