@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../shared/widgets/custom_button.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
 import '../../../main/presentation/pages/main_navigation_screen.dart';
 import 'sign_up_screen.dart';
 import 'sign_in_screen.dart';
@@ -139,7 +140,10 @@ class WelcomeScreen extends StatelessWidget {
           text: AppStrings.continueWithApple,
           onPressed: () {
             // TODO: Implement Apple sign in
-            _showComingSoon(context);
+            AppSnackbar.showInfo(
+              context,
+              message: '🍎 Apple Sign-In is coming soon! We\'re working on it.',
+            );
           },
           variant: ButtonVariant.socialGradientBorder,
           icon: SvgPicture.asset(
@@ -266,19 +270,6 @@ class WelcomeScreen extends StatelessWidget {
           );
         },
         transitionDuration: const Duration(milliseconds: 500),
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Coming soon! We\'re building this feature.'),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-        ),
       ),
     );
   }
