@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_dimensions.dart';
@@ -123,11 +124,11 @@ class WelcomeScreen extends StatelessWidget {
         CustomButton(
           text: AppStrings.continueWithGoogle,
           onPressed: () => _navigateToMainApp(context),
-          variant: ButtonVariant.secondary,
-          icon: const Icon(
-            Icons.g_mobiledata,
-            size: AppDimensions.iconM,
-            color: AppColors.textPrimary,
+          variant: ButtonVariant.socialGradientBorder,
+          icon: SvgPicture.asset(
+            'assets/images/svg/google-icon.svg',
+            width: AppDimensions.iconM,
+            height: AppDimensions.iconM,
           ),
         ),
         
@@ -140,11 +141,11 @@ class WelcomeScreen extends StatelessWidget {
             // TODO: Implement Apple sign in
             _showComingSoon(context);
           },
-          variant: ButtonVariant.secondary,
-          icon: const Icon(
-            Icons.apple,
-            size: AppDimensions.iconM,
-            color: AppColors.textPrimary,
+          variant: ButtonVariant.socialGradientBorder,
+          icon: SvgPicture.asset(
+            'assets/images/svg/apple-icon.svg',
+            width: AppDimensions.iconM,
+            height: AppDimensions.iconM,
           ),
         ),
       ],
