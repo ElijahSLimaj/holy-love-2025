@@ -52,8 +52,7 @@
 			<string>REVERSED_CLIENT_ID</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<!-- Replace this with your REVERSED_CLIENT_ID from Firebase Console -->
-				<string>com.googleusercontent.apps.540961635657-YOUR_CLIENT_ID</string>
+				<string>com.googleusercontent.apps.540961635657-5mmg8evmlvegr2oshqs143152aqnpv4e</string>
 			</array>
 		</dict>
 	</array>
