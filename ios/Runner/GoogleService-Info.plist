@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>540961635657-5mmg8evmlvegr2oshqs143152aqnpv4e.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.540961635657-5mmg8evmlvegr2oshqs143152aqnpv4e</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDfyC09juxsWfH7jymPQMV5Q77Wfy71DIk</string>
+	<key>GCM_SENDER_ID</key>
+	<string>540961635657</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.holylove.app.holyLove</string>
+	<key>PROJECT_ID</key>
+	<string>holy-love-2025-07-11</string>
+	<key>STORAGE_BUCKET</key>
+	<string>holy-love-2025-07-11.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:540961635657:ios:0f2efc5df1a8376b682e98</string>
+</dict>
+</plist>

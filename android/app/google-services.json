@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "540961635657",
+    "project_id": "holy-love-2025-07-11",
+    "storage_bucket": "holy-love-2025-07-11.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:540961635657:android:8e46f0c008d3a5c1682e98",
+        "android_client_info": {
+          "package_name": "com.example.holy_love"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB47Lc1hvXuNDZcwCOUBHdPWX5mrRL5QaE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:540961635657:android:1a3a1c1970ba34ff682e98",
+        "android_client_info": {
+          "package_name": "com.holylove.app.holy_love"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB47Lc1hvXuNDZcwCOUBHdPWX5mrRL5QaE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

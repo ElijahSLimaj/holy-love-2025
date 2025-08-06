@@ -3,10 +3,9 @@ import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../discovery/data/models/user_profile.dart';
 import '../../../discovery/data/mock_users.dart';
 import '../../../matches/presentation/widgets/conversation_tile.dart';
-import '../../../matches/presentation/pages/matches_screen.dart'; // For ConversationData
+import '../../../matches/presentation/pages/matches_screen.dart';
 import 'chat_screen.dart';
 
 class MessagesScreen extends StatefulWidget {

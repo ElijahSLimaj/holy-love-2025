@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../shared/widgets/custom_button.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
+import '../bloc/auth_bloc.dart';
 import '../../../main/presentation/pages/main_navigation_screen.dart';
+
 import 'sign_up_screen.dart';
 import 'sign_in_screen.dart';
 import 'profile_creation_screen.dart';
@@ -14,41 +19,51 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.background,
-              AppColors.lightGray,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.screenPaddingHorizontal,
-            ),
-            child: Column(
-              children: [
-                const Spacer(flex: 2),
-                
-                // Hero Section
-                _buildHeroSection(context),
-                
-                const Spacer(flex: 3),
-                
-                // Action Buttons
-                _buildActionButtons(context),
-                
-                const SizedBox(height: AppDimensions.spacing32),
-                
-                // Sign In Link
-                _buildSignInLink(context),
-                
-                const SizedBox(height: AppDimensions.spacing24),
+      body: BlocListener<AuthBloc, AuthState>(
+        listener: (context, state) {
+          if (state.errorMessage != null) {
+            AppSnackbar.showError(
+              context,
+              message: state.errorMessage!,
+            );
+          }
+        },
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                AppColors.background,
+                AppColors.lightGray,
               ],
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.screenPaddingHorizontal,
+              ),
+              child: Column(
+                children: [
+                  const Spacer(flex: 2),
+                  
+                  // Hero Section
+                  _buildHeroSection(context),
+                  
+                  const Spacer(flex: 3),
+                  
+                  // Action Buttons
+                  _buildActionButtons(context),
+                  
+                  const SizedBox(height: AppDimensions.spacing32),
+                  
+                  // Sign In Link
+                  _buildSignInLink(context),
+                  
+                  const SizedBox(height: AppDimensions.spacing24),
+                ],
+              ),
             ),
           ),
         ),
@@ -120,15 +135,27 @@ class WelcomeScreen extends StatelessWidget {
         const SizedBox(height: AppDimensions.spacing16),
         
         // Continue with Google
-        CustomButton(
-          text: AppStrings.continueWithGoogle,
-          onPressed: () => _navigateToMainApp(context),
-          variant: ButtonVariant.secondary,
-          icon: const Icon(
-            Icons.g_mobiledata,
-            size: AppDimensions.iconM,
-            color: AppColors.textPrimary,
-          ),
+        BlocBuilder<AuthBloc, AuthState>(
+          builder: (context, state) {
+            final isLoading = state.status == AuthStatus.loading;
+            return CustomButton(
+              text: AppStrings.continueWithGoogle,
+              onPressed: isLoading 
+                  ? null 
+                  : () => context.read<AuthBloc>().add(
+                        const AuthSignInWithGoogleRequested(),
+                      ),
+              variant: ButtonVariant.socialGradientBorder,
+              isLoading: isLoading,
+              icon: isLoading
+                  ? null
+                  : SvgPicture.asset(
+                      'assets/images/svg/google-icon.svg',
+                      width: AppDimensions.iconM,
+                      height: AppDimensions.iconM,
+                    ),
+            );
+          },
         ),
         
         const SizedBox(height: AppDimensions.spacing12),
@@ -138,13 +165,16 @@ class WelcomeScreen extends StatelessWidget {
           text: AppStrings.continueWithApple,
           onPressed: () {
             // TODO: Implement Apple sign in
-            _showComingSoon(context);
+            AppSnackbar.showInfo(
+              context,
+              message: '🍎 Apple Sign-In is coming soon! We\'re working on it.',
+            );
           },
-          variant: ButtonVariant.secondary,
-          icon: const Icon(
-            Icons.apple,
-            size: AppDimensions.iconM,
-            color: AppColors.textPrimary,
+          variant: ButtonVariant.socialGradientBorder,
+          icon: SvgPicture.asset(
+            'assets/images/svg/apple-icon.svg',
+            width: AppDimensions.iconM,
+            height: AppDimensions.iconM,
           ),
         ),
       ],
@@ -221,63 +251,6 @@ class WelcomeScreen extends StatelessWidget {
           );
         },
         transitionDuration: const Duration(milliseconds: 400),
-      ),
-    );
-  }
-
-  void _navigateToPhotoUpload(BuildContext context) {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const ProfileCreationScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(1.0, 0.0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
-            child: child,
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 400),
-      ),
-    );
-  }
-
-  void _navigateToMainApp(BuildContext context) {
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const MainNavigationScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: Tween<double>(
-              begin: 0.0,
-              end: 1.0,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeInOut,
-            )),
-            child: child,
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 500),
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Coming soon! We\'re building this feature.'),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-        ),
       ),
     );
   }

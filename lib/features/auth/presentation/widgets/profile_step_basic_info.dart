@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../profile/presentation/bloc/profile_creation_bloc.dart';
 
 class ProfileStepBasicInfo extends StatefulWidget {
   final Map<String, dynamic> profileData;
   final Function(String, dynamic) onDataChanged;
+  final VoidCallback? onStepCompleted;
 
   const ProfileStepBasicInfo({
     super.key,
     required this.profileData,
     required this.onDataChanged,
+    this.onStepCompleted,
   });
 
   @override
-  State<ProfileStepBasicInfo> createState() => _ProfileStepBasicInfoState();
+  State<ProfileStepBasicInfo> createState() => ProfileStepBasicInfoState();
 }
 
-class _ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
+class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
     with TickerProviderStateMixin {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -32,6 +36,10 @@ class _ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
   
   late AnimationController _slideController;
   late List<Animation<Offset>> _fieldAnimations;
+  
+  // Form validation
+  final _formKey = GlobalKey<FormState>();
+  Map<String, String> _fieldErrors = {};
   
   @override
   void initState() {
@@ -122,26 +130,58 @@ class _ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
   
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.screenPaddingHorizontal,
-      ),
-      child: Column(
-        children: [
-          const SizedBox(height: AppDimensions.spacing24),
+    return BlocListener<ProfileCreationBloc, ProfileCreationState>(
+      listener: (context, state) {
+        if (state is ProfileCreationError) {
+          // Update field errors
+          setState(() {
+            _fieldErrors = state.fieldErrors ?? {};
+          });
           
-          // First Name Field
-          SlideTransition(
-            position: _fieldAnimations[0],
-            child: _buildAnimatedTextField(
-              controller: _firstNameController,
-              focusNode: _firstNameFocusNode,
-              labelText: AppStrings.firstName,
-              hintText: 'Enter your first name',
-              textInputAction: TextInputAction.next,
-              onFieldSubmitted: (_) => _lastNameFocusNode.requestFocus(),
-            ),
+          // Show error snackbar if general error
+          if (state.fieldErrors == null || state.fieldErrors!.isEmpty) {
+            _showErrorSnackBar(state.message);
+          }
+        } else if (state is ProfileCreationStepCompleted) {
+          // Clear errors and notify parent
+          setState(() {
+            _fieldErrors = {};
+          });
+          widget.onStepCompleted?.call();
+        }
+      },
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.screenPaddingHorizontal,
           ),
+          child: Column(
+            children: [
+              const SizedBox(height: AppDimensions.spacing24),
+              
+              // First Name Field
+              SlideTransition(
+                position: _fieldAnimations[0],
+                child: _buildAnimatedTextField(
+                  controller: _firstNameController,
+                  focusNode: _firstNameFocusNode,
+                  labelText: AppStrings.firstName,
+                  hintText: 'Enter your first name',
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => _lastNameFocusNode.requestFocus(),
+                  errorText: _fieldErrors['firstName'],
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'First name is required';
+                    }
+                    if (value.trim().length < 2) {
+                      return 'First name must be at least 2 characters';
+                    }
+                    return null;
+                  },
+                ),
+              ),
           
           const SizedBox(height: AppDimensions.spacing20),
           
@@ -155,6 +195,16 @@ class _ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
               hintText: 'Enter your last name',
               textInputAction: TextInputAction.next,
               onFieldSubmitted: (_) => _ageFocusNode.requestFocus(),
+              errorText: _fieldErrors['lastName'],
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Last name is required';
+                }
+                if (value.trim().length < 2) {
+                  return 'Last name must be at least 2 characters';
+                }
+                return null;
+              },
             ),
           ),
           
@@ -175,6 +225,23 @@ class _ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
                 LengthLimitingTextInputFormatter(2),
               ],
               onFieldSubmitted: (_) => _locationFocusNode.requestFocus(),
+              errorText: _fieldErrors['age'],
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Age is required';
+                }
+                final age = int.tryParse(value);
+                if (age == null) {
+                  return 'Please enter a valid age';
+                }
+                if (age < 18) {
+                  return 'You must be at least 18 years old';
+                }
+                if (age > 100) {
+                  return 'Please enter a valid age';
+                }
+                return null;
+              },
             ),
           ),
           
@@ -197,6 +264,13 @@ class _ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
                   size: AppDimensions.iconS,
                 ),
               ),
+              errorText: _fieldErrors['location'],
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Location is required';
+                }
+                return null;
+              },
             ),
           ),
           
@@ -207,7 +281,9 @@ class _ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
             position: _fieldAnimations[3],
             child: _buildInfoCard(),
           ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -222,6 +298,8 @@ class _ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
     List<TextInputFormatter>? inputFormatters,
     Function(String)? onFieldSubmitted,
     Widget? suffixIcon,
+    String? errorText,
+    String? Function(String?)? validator,
   }) {
     final isFocused = focusNode.hasFocus;
     
@@ -247,8 +325,10 @@ class _ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
         textInputAction: textInputAction,
         inputFormatters: inputFormatters,
         onFieldSubmitted: onFieldSubmitted,
+        validator: validator,
         style: Theme.of(context).textTheme.bodyLarge,
         decoration: InputDecoration(
+          errorText: errorText,
           labelText: labelText,
           hintText: hintText,
           suffixIcon: suffixIcon,
@@ -341,6 +421,46 @@ class _ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusM),
         ),
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+        ),
+      ),
+    );
+  }
+
+  /// Save basic info data to Firestore
+  Future<void> saveBasicInfo() async {
+    // Validate form
+    if (!_formKey.currentState!.validate()) {
+      HapticFeedback.mediumImpact();
+      return;
+    }
+
+    // Extract location components if available
+    final locationParts = _locationController.text.split(',').map((e) => e.trim()).toList();
+    final locationCity = locationParts.isNotEmpty ? locationParts[0] : null;
+    final locationState = locationParts.length > 1 ? locationParts[1] : null;
+
+    // Save to Firestore via bloc
+    context.read<ProfileCreationBloc>().add(
+      SaveBasicInfoRequested(
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        age: int.parse(_ageController.text),
+        location: _locationController.text.trim(),
+        locationCity: locationCity,
+        locationState: locationState,
       ),
     );
   }

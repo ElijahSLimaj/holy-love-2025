@@ -9,6 +9,7 @@ enum ButtonVariant {
   outline,
   text,
   gradient,
+  socialGradientBorder,
 }
 
 enum ButtonSize {
@@ -64,6 +65,8 @@ class CustomButton extends StatelessWidget {
         return _buildTextButton(theme);
       case ButtonVariant.gradient:
         return _buildGradientButton(theme);
+      case ButtonVariant.socialGradientBorder:
+        return _buildSocialGradientBorderButton(theme);
     }
   }
 
@@ -157,6 +160,37 @@ class CustomButton extends StatelessWidget {
         child: DefaultTextStyle(
           style: _getTextStyle().copyWith(
             color: AppColors.textOnPrimary,
+          ),
+          child: _buildButtonContent(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSocialGradientBorderButton(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppColors.loveGradient,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+      ),
+      child: Container(
+        margin: const EdgeInsets.all(1.5), // Border width
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusM - 1.5),
+        ),
+        child: ElevatedButton(
+          onPressed: isLoading ? null : onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            foregroundColor: AppColors.textPrimary,
+            elevation: 0,
+            shadowColor: Colors.transparent,
+            padding: _getButtonPadding(),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusM - 1.5),
+            ),
+            textStyle: _getTextStyle(),
           ),
           child: _buildButtonContent(),
         ),

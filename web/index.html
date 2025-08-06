@@ -18,21 +18,49 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Holy Love - A Christian dating app where hearts connect through faith">
+
+  <!-- Google Sign-In meta tag - Replace with your web OAuth client ID from Firebase Console -->
+  <meta name="google-signin-client_id" content="540961635657-m2406mmvr4bg20jn7qqalgi6tkokbu4h.apps.googleusercontent.com">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="holy_love">
+  <meta name="apple-mobile-web-app-title" content="Holy Love">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>holy_love</title>
+  <title>Holy Love</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
+
+  <!-- Google Sign-In SDK -->
+  <script src="https://apis.google.com/js/platform.js" async defer></script>
 </head>
 <body>
+  <!-- Firebase Configuration -->
+  <script>
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBbHS8o2IeqV_E11_KvqLb40eekuIHuExU",
+      authDomain: "holy-love-2025-07-11.firebaseapp.com",
+      projectId: "holy-love-2025-07-11",
+      storageBucket: "holy-love-2025-07-11.firebasestorage.app",
+      messagingSenderId: "540961635657",
+      appId: "1:540961635657:web:2dc19eb09cc81423682e98"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+  </script>
+  
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
