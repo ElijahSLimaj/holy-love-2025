@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 
 
@@ -35,8 +36,24 @@ class AuthRepository {
     GoogleSignIn? googleSignIn,
     FirebaseFirestore? firestore,
   })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
-        _googleSignIn = googleSignIn ?? GoogleSignIn(),
+        _googleSignIn = googleSignIn ?? _createGoogleSignIn(),
         _firestore = firestore ?? FirebaseFirestore.instance;
+
+  /// Create GoogleSignIn instance with web support
+  static GoogleSignIn _createGoogleSignIn() {
+    if (kIsWeb) {
+      // For web, we'll configure the client ID through Firebase Console
+      // The web client ID will be automatically detected from Firebase config
+      return GoogleSignIn(
+        scopes: ['email', 'profile'],
+      );
+    } else {
+      // For mobile platforms
+      return GoogleSignIn(
+        scopes: ['email', 'profile'],
+      );
+    }
+  }
 
   /// Stream of [AuthUser] which will emit the current user when
   /// the authentication state changes.
@@ -62,6 +79,15 @@ class AuthRepository {
       displayName: firebaseUser.displayName,
       photoURL: firebaseUser.photoURL,
     );
+  }
+
+  /// Refresh the current user's profile completion status
+  /// This is useful after profile updates to ensure the auth state is current
+  Future<AuthUser> refreshCurrentUser() async {
+    final firebaseUser = _firebaseAuth.currentUser;
+    if (firebaseUser == null) return AuthUser.empty;
+    
+    return await _mapFirebaseUserToAuthUser(firebaseUser);
   }
 
   /// Signs in with Google and returns the [AuthUser].
@@ -188,22 +214,40 @@ class AuthRepository {
 
   /// Maps a [User] from Firebase Auth to an [AuthUser].
   Future<AuthUser> _mapFirebaseUserToAuthUser(User firebaseUser) async {
-    // Check if user has completed onboarding
-    final userDoc = await _firestore
-        .collection('users')
-        .doc(firebaseUser.uid)
-        .get();
-    
-    final isNewUser = !userDoc.exists || 
-                     userDoc.data()?.containsKey('profileComplete') != true;
-    
-    return AuthUser(
-      id: firebaseUser.uid,
-      email: firebaseUser.email ?? '',
-      displayName: firebaseUser.displayName,
-      photoURL: firebaseUser.photoURL,
-      isNewUser: isNewUser,
-    );
+    try {
+      // Check if user has completed onboarding
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(firebaseUser.uid)
+          .get();
+      
+      // User is considered new if:
+      // 1. Document doesn't exist, OR
+      // 2. Document exists but profileComplete is false or doesn't exist
+      final isNewUser = !userDoc.exists || 
+                       userDoc.data()?['profileComplete'] != true;
+      
+      return AuthUser(
+        id: firebaseUser.uid,
+        email: firebaseUser.email ?? '',
+        displayName: firebaseUser.displayName,
+        photoURL: firebaseUser.photoURL,
+        isNewUser: isNewUser,
+      );
+    } catch (e) {
+      // If there's a permission error or any other Firestore error,
+      // treat the user as new so they can complete their profile
+      debugPrint('⚠️ [AuthRepository] Error reading user document: $e');
+      debugPrint('🔄 [AuthRepository] Treating user as new due to error');
+      
+      return AuthUser(
+        id: firebaseUser.uid,
+        email: firebaseUser.email ?? '',
+        displayName: firebaseUser.displayName,
+        photoURL: firebaseUser.photoURL,
+        isNewUser: true, // Treat as new user if we can't read their profile
+      );
+    }
   }
 
   /// Creates or updates user document in Firestore

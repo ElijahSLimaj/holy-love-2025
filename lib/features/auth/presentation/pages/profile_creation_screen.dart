@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../shared/widgets/custom_button.dart';
-import '../../../main/presentation/pages/main_navigation_screen.dart';
+import '../../../profile/data/repositories/profile_repository.dart';
+import '../../../profile/presentation/bloc/profile_creation_bloc.dart';
+import '../bloc/auth_bloc.dart';
 import '../widgets/profile_step_basic_info.dart';
 import '../widgets/profile_step_photos.dart';
 import '../widgets/profile_step_faith.dart';
@@ -35,6 +38,9 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
   
   // Profile data
   final Map<String, dynamic> _profileData = {};
+  
+  // Step widget keys
+  final GlobalKey<ProfileStepBasicInfoState> _basicInfoKey = GlobalKey();
   
   @override
   void initState() {
@@ -112,32 +118,53 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.background,
-              AppColors.lightGray,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header with progress
-              _buildHeader(),
-              
-              // Page content
-              Expanded(
-                child: _buildPageView(),
+    return BlocProvider(
+      create: (context) => ProfileCreationBloc(
+        profileRepository: ProfileRepository(),
+      ),
+      child: BlocListener<ProfileCreationBloc, ProfileCreationState>(
+        listener: (context, state) {
+          if (state is ProfileCreationError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: AppColors.error,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                ),
               ),
-              
-              // Navigation buttons
-              _buildNavigationButtons(),
-            ],
+            );
+          }
+        },
+        child: Scaffold(
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppColors.background,
+                  AppColors.lightGray,
+                ],
+              ),
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Header with progress
+                  _buildHeader(),
+                  
+                  // Page content
+                  Expanded(
+                    child: _buildPageView(),
+                  ),
+                  
+                  // Navigation buttons
+                  _buildNavigationButtons(),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -257,8 +284,13 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
           physics: const NeverScrollableScrollPhysics(),
           children: [
             ProfileStepBasicInfo(
+              key: _basicInfoKey,
               profileData: _profileData,
               onDataChanged: _updateProfileData,
+              onStepCompleted: () {
+                // Move to next step after successful save
+                _moveToNextStepAfterSave();
+              },
             ),
             ProfileStepPhotos(
               profileData: _profileData,
@@ -323,6 +355,14 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
   
   // Step management
   void _nextStep() async {
+    // Save data for specific steps before proceeding
+    if (_currentStep == 0) {
+      // Save basic info to Firestore
+      _basicInfoKey.currentState?.saveBasicInfo();
+      // The actual navigation will happen via the onStepCompleted callback
+      return;
+    }
+    
     if (_currentStep < _totalSteps - 1) {
       // Animate out current step
       await _slideController.reverse();
@@ -346,6 +386,30 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
     } else {
       // Complete profile creation
       _completeProfileCreation();
+    }
+  }
+  
+  void _moveToNextStepAfterSave() async {
+    if (_currentStep < _totalSteps - 1) {
+      // Animate out current step
+      await _slideController.reverse();
+      
+      setState(() {
+        _currentStep++;
+      });
+      
+      // Update page
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+      
+      // Animate in new step
+      _slideController.forward();
+      _updateProgress();
+      
+      // Haptic feedback
+      HapticFeedback.lightImpact();
     }
   }
   
@@ -384,11 +448,19 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
   }
   
   void _completeProfileCreation() async {
+    // Mark profile as complete using the bloc
+    context.read<ProfileCreationBloc>().add(
+      CompleteProfileRequested(
+        allProfileData: _profileData,
+      ),
+    );
+    
     // Show success animation
     await _showCompletionAnimation();
     
-    // TODO: Save profile data and navigate to main app
     if (mounted) {
+      // Refresh the auth user state to reflect profile completion
+      context.read<AuthBloc>().add(const AuthRefreshUserRequested());
       _navigateToMainApp();
     }
   }
@@ -440,25 +512,8 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
   
   void _navigateToMainApp() {
     Navigator.of(context).pop(); // Close dialog
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const MainNavigationScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: Tween<double>(
-              begin: 0.0,
-              end: 1.0,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeInOut,
-            )),
-            child: child,
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 500),
-      ),
-    );
+    // Pop to root and let the auth bloc handle navigation
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
   
   // Helper methods

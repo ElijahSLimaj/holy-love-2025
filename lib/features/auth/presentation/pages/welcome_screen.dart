@@ -8,6 +8,7 @@ import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/app_snackbar.dart';
 import '../bloc/auth_bloc.dart';
 import '../../../main/presentation/pages/main_navigation_screen.dart';
+
 import 'sign_up_screen.dart';
 import 'sign_in_screen.dart';
 import 'profile_creation_screen.dart';

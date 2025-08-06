@@ -54,3 +54,8 @@ final class AuthSignUpWithEmailRequested extends AuthEvent {
 final class AuthSignOutRequested extends AuthEvent {
   const AuthSignOutRequested();
 }
+
+/// Event to refresh the current user's profile completion status
+final class AuthRefreshUserRequested extends AuthEvent {
+  const AuthRefreshUserRequested();
+}

@@ -16,6 +16,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthSignInWithEmailRequested>(_onSignInWithEmailRequested);
     on<AuthSignUpWithEmailRequested>(_onSignUpWithEmailRequested);
     on<AuthSignOutRequested>(_onSignOutRequested);
+    on<AuthRefreshUserRequested>(_onRefreshUserRequested);
     
     _userSubscription = _authRepository.user.listen(
       (user) => add(_AuthUserChanged(user)),
@@ -102,6 +103,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     try {
       await _authRepository.signOut();
+    } catch (error) {
+      emit(
+        state.copyWith(
+          errorMessage: error.toString(),
+        ),
+      );
+    }
+  }
+
+  Future<void> _onRefreshUserRequested(
+    AuthRefreshUserRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    try {
+      final refreshedUser = await _authRepository.refreshCurrentUser();
+      emit(AuthState.authenticated(refreshedUser));
     } catch (error) {
       emit(
         state.copyWith(
