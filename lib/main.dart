@@ -12,11 +12,11 @@ import 'features/main/presentation/pages/main_navigation_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  
+
   runApp(const HolyLoveApp());
 }
 

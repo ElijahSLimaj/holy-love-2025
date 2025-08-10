@@ -67,19 +67,22 @@ class _MatchCardState extends State<MatchCard>
       animation: _hoverController,
       builder: (context, child) {
         return Transform.scale(
-          scale: _scaleAnimation.value.clamp(0.1, 2.0), // Prevent invalid scale values
+          scale: _scaleAnimation.value
+              .clamp(0.1, 2.0), // Prevent invalid scale values
           child: Container(
-            margin: const EdgeInsets.only(bottom: AppDimensions.spacing16), // Added bottom margin
+            margin: const EdgeInsets.only(
+                bottom: AppDimensions.spacing16), // Added bottom margin
             child: SizedBox(
               width: 120, // Reduced from 140
               height: 200, // Reduced from 250
               child: Material(
-                elevation: _elevationAnimation.value.clamp(0.0, 24.0), // Clamp elevation
+                elevation: _elevationAnimation.value
+                    .clamp(0.0, 24.0), // Clamp elevation
                 borderRadius: BorderRadius.circular(AppDimensions.radiusL),
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(AppDimensions.radiusL),
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
@@ -100,7 +103,8 @@ class _MatchCardState extends State<MatchCard>
                       Positioned.fill(
                         child: Material(
                           color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusL),
                           child: InkWell(
                             onTap: () {
                               HapticFeedback.lightImpact();
@@ -109,7 +113,8 @@ class _MatchCardState extends State<MatchCard>
                             onTapDown: (_) => _hoverController.forward(),
                             onTapUp: (_) => _hoverController.reverse(),
                             onTapCancel: () => _hoverController.reverse(),
-                            borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+                            borderRadius:
+                                BorderRadius.circular(AppDimensions.radiusL),
                           ),
                         ),
                       ),
@@ -132,9 +137,9 @@ class _MatchCardState extends State<MatchCard>
           flex: 2, // Reduced to give MORE space to info
           child: Container(
             width: double.infinity,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.lightGray,
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(AppDimensions.radiusL),
                 topRight: Radius.circular(AppDimensions.radiusL),
               ),
@@ -192,7 +197,8 @@ class _MatchCardState extends State<MatchCard>
           flex: 3, // MUCH more space for text content
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(AppDimensions.paddingS), // Reduced padding for smaller card
+            padding: const EdgeInsets.all(
+                AppDimensions.paddingS), // Reduced padding for smaller card
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -202,10 +208,10 @@ class _MatchCardState extends State<MatchCard>
                   child: Text(
                     widget.user.firstName,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                      fontSize: 14, // Reduced from 15
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                          fontSize: 14, // Reduced from 15
+                        ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
@@ -216,10 +222,10 @@ class _MatchCardState extends State<MatchCard>
                   child: Text(
                     '${widget.user.age}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12, // Reduced from 13
-                    ),
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12, // Reduced from 13
+                        ),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -234,14 +240,14 @@ class _MatchCardState extends State<MatchCard>
                     borderRadius: BorderRadius.circular(AppDimensions.radiusS),
                   ),
                   child: Text(
-                    widget.user.denomination.length > 10 
+                    widget.user.denomination.length > 10
                         ? '${widget.user.denomination.substring(0, 10)}...'
                         : widget.user.denomination,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 9, // Reduced from 10
-                    ),
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 9, // Reduced from 10
+                        ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
@@ -287,14 +293,14 @@ class _MatchCardState extends State<MatchCard>
             Text(
               'Match',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 9, // Reduced font size
-              ),
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 9, // Reduced font size
+                  ),
             ),
           ],
         ),
       ),
     );
   }
-} 
+}

@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
+// removed unused import
 
 class ProfileData {
   // Basic Info
@@ -13,23 +13,23 @@ class ProfileData {
   final String? locationCity;
   final String? locationState;
   final String? locationCountry;
-  
+
   // Profile Metadata
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool profileComplete;
   final int profileCompletionPercentage;
   final Map<String, bool> completedSteps;
-  
+
   // Search Optimization Fields
   final String searchName; // Lowercase for case-insensitive search
   final List<String> searchKeywords; // For text search
   final int ageGroup; // For age range queries (e.g., 20, 25, 30)
-  
+
   // Denormalized fields for performance
   final String? mainPhotoUrl; // Avoid extra reads for profile cards
   final String? mainPhotoThumbnailUrl; // Small size for list views
-  
+
   ProfileData({
     required this.userId,
     required this.firstName,
@@ -59,23 +59,25 @@ class ProfileData {
   }
 
   /// Generate search keywords for text search
-  static List<String> generateSearchKeywords(String firstName, String lastName, String location) {
+  static List<String> generateSearchKeywords(
+      String firstName, String lastName, String location) {
     final keywords = <String>[];
-    
+
     // Add full names
     keywords.add(firstName.toLowerCase());
     keywords.add(lastName.toLowerCase());
     keywords.add('${firstName.toLowerCase()} ${lastName.toLowerCase()}');
-    
+
     // Add partial names for autocomplete
     for (int i = 1; i <= firstName.length && i <= 3; i++) {
       keywords.add(firstName.substring(0, i).toLowerCase());
     }
-    
+
     // Add location keywords
-    final locationParts = location.split(',').map((e) => e.trim().toLowerCase());
+    final locationParts =
+        location.split(',').map((e) => e.trim().toLowerCase());
     keywords.addAll(locationParts);
-    
+
     return keywords.toSet().toList(); // Remove duplicates
   }
 
@@ -108,15 +110,17 @@ class ProfileData {
   }
 
   factory ProfileData.fromFirestore(Map<String, dynamic> data) {
-    debugPrint('🔄 [ProfileData] fromFirestore started with data: $data');
-    
     // Handle null timestamps safely
-    final createdAt = data['createdAt'] != null ? (data['createdAt'] as Timestamp).toDate() : DateTime.now();
-    final updatedAt = data['updatedAt'] != null ? (data['updatedAt'] as Timestamp).toDate() : DateTime.now();
-    final birthDate = data['birthDate'] != null ? (data['birthDate'] as Timestamp).toDate() : DateTime.now();
-    
-    debugPrint('📅 [ProfileData] Parsed timestamps - createdAt: $createdAt, updatedAt: $updatedAt, birthDate: $birthDate');
-    
+    final createdAt = data['createdAt'] != null
+        ? (data['createdAt'] as Timestamp).toDate()
+        : DateTime.now();
+    final updatedAt = data['updatedAt'] != null
+        ? (data['updatedAt'] as Timestamp).toDate()
+        : DateTime.now();
+    final birthDate = data['birthDate'] != null
+        ? (data['birthDate'] as Timestamp).toDate()
+        : DateTime.now();
+
     final profileData = ProfileData(
       userId: data['userId'] ?? '',
       firstName: data['firstName'] ?? '',
@@ -139,8 +143,7 @@ class ProfileData {
       mainPhotoUrl: data['mainPhotoUrl'],
       mainPhotoThumbnailUrl: data['mainPhotoThumbnailUrl'],
     );
-    
-    debugPrint('✅ [ProfileData] Successfully created ProfileData object');
+
     return profileData;
   }
 
@@ -165,7 +168,7 @@ class ProfileData {
     final newLastName = lastName ?? this.lastName;
     final newAge = age ?? this.age;
     final newLocation = location ?? this.location;
-    
+
     return ProfileData(
       userId: userId,
       firstName: newFirstName,
@@ -180,13 +183,16 @@ class ProfileData {
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
       profileComplete: profileComplete ?? this.profileComplete,
-      profileCompletionPercentage: profileCompletionPercentage ?? this.profileCompletionPercentage,
+      profileCompletionPercentage:
+          profileCompletionPercentage ?? this.profileCompletionPercentage,
       completedSteps: completedSteps ?? this.completedSteps,
       searchName: '${newFirstName.toLowerCase()} ${newLastName.toLowerCase()}',
-      searchKeywords: generateSearchKeywords(newFirstName, newLastName, newLocation),
+      searchKeywords:
+          generateSearchKeywords(newFirstName, newLastName, newLocation),
       ageGroup: calculateAgeGroup(newAge),
       mainPhotoUrl: mainPhotoUrl ?? this.mainPhotoUrl,
-      mainPhotoThumbnailUrl: mainPhotoThumbnailUrl ?? this.mainPhotoThumbnailUrl,
+      mainPhotoThumbnailUrl:
+          mainPhotoThumbnailUrl ?? this.mainPhotoThumbnailUrl,
     );
   }
 }
@@ -199,12 +205,12 @@ class ProfileDetailsData {
   final String? churchAttendance;
   final String? favoriteBibleVerse;
   final String? faithStory;
-  
+
   // About Information
   final String? bio;
   final List<String> interests;
   final String? relationshipGoal;
-  
+
   // Additional Details
   final String? occupation;
   final String? education;
@@ -215,10 +221,10 @@ class ProfileDetailsData {
   final bool? drinks;
   final bool? smokes;
   final String? personalityType;
-  
+
   // Preferences
   final Map<String, dynamic>? preferences;
-  
+
   ProfileDetailsData({
     this.denomination,
     this.churchAttendance,

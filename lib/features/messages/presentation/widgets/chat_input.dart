@@ -20,17 +20,16 @@ class ChatInput extends StatefulWidget {
   State<ChatInput> createState() => _ChatInputState();
 }
 
-class _ChatInputState extends State<ChatInput>
-    with TickerProviderStateMixin {
+class _ChatInputState extends State<ChatInput> with TickerProviderStateMixin {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  
+
   late AnimationController _sendButtonController;
   late AnimationController _attachmentController;
   late Animation<double> _sendButtonScaleAnimation;
   late Animation<double> _sendButtonRotationAnimation;
   late Animation<double> _attachmentFadeAnimation;
-  
+
   bool _hasText = false;
   bool _showAttachments = false;
 
@@ -84,7 +83,7 @@ class _ChatInputState extends State<ChatInput>
         setState(() {
           _hasText = hasText;
         });
-        
+
         if (hasText) {
           _sendButtonController.forward();
           widget.onStartTyping?.call();
@@ -134,7 +133,7 @@ class _ChatInputState extends State<ChatInput>
         setState(() {
           _showAttachments = !_showAttachments;
         });
-        
+
         if (_showAttachments) {
           _attachmentController.forward();
         } else {
@@ -171,7 +170,7 @@ class _ChatInputState extends State<ChatInput>
         color: AppColors.lightGray,
         borderRadius: BorderRadius.circular(AppDimensions.radiusL),
         border: Border.all(
-          color: _focusNode.hasFocus 
+          color: _focusNode.hasFocus
               ? AppColors.primary.withOpacity(0.3)
               : AppColors.border.withOpacity(0.3),
           width: 1,
@@ -183,13 +182,13 @@ class _ChatInputState extends State<ChatInput>
         maxLines: null,
         textCapitalization: TextCapitalization.sentences,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: AppColors.textPrimary,
-        ),
+              color: AppColors.textPrimary,
+            ),
         decoration: InputDecoration(
           hintText: AppStrings.typeMessage,
           hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textTertiary,
-          ),
+                color: AppColors.textTertiary,
+              ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: AppDimensions.paddingL,
@@ -215,26 +214,22 @@ class _ChatInputState extends State<ChatInput>
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  gradient: _hasText 
-                      ? AppColors.loveGradient
-                      : null,
-                  color: _hasText 
-                      ? null 
-                      : AppColors.lightGray,
+                  gradient: _hasText ? AppColors.loveGradient : null,
+                  color: _hasText ? null : AppColors.lightGray,
                   borderRadius: BorderRadius.circular(AppDimensions.radiusL),
-                  boxShadow: _hasText ? [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ] : null,
+                  boxShadow: _hasText
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Icon(
                   Icons.send_rounded,
-                  color: _hasText 
-                      ? AppColors.white 
-                      : AppColors.textTertiary,
+                  color: _hasText ? AppColors.white : AppColors.textTertiary,
                   size: AppDimensions.iconM,
                 ),
               ),
@@ -345,9 +340,9 @@ class _ChatInputState extends State<ChatInput>
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
         ],
       ),
@@ -375,4 +370,4 @@ class _ChatInputState extends State<ChatInput>
       ),
     );
   }
-} 
+}

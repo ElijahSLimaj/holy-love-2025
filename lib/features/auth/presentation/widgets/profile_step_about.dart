@@ -22,45 +22,103 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
     with TickerProviderStateMixin {
   final _bioController = TextEditingController();
   final _bioFocusNode = FocusNode();
-  
+
   late AnimationController _slideController;
   late AnimationController _chipController;
   late List<Animation<Offset>> _sectionAnimations;
   late List<Animation<double>> _chipAnimations;
-  
+
   List<String> _selectedInterests = [];
   String? _selectedRelationshipGoal;
-  
+
   final List<Map<String, dynamic>> _interests = [
-    {'id': 'worship', 'name': 'Worship Music', 'icon': '🎵', 'category': 'faith'},
-    {'id': 'bible_study', 'name': 'Bible Study', 'icon': '📖', 'category': 'faith'},
+    {
+      'id': 'worship',
+      'name': 'Worship Music',
+      'icon': '🎵',
+      'category': 'faith'
+    },
+    {
+      'id': 'bible_study',
+      'name': 'Bible Study',
+      'icon': '📖',
+      'category': 'faith'
+    },
     {'id': 'prayer', 'name': 'Prayer', 'icon': '🙏', 'category': 'faith'},
-    {'id': 'volunteering', 'name': 'Volunteering', 'icon': '🤝', 'category': 'faith'},
+    {
+      'id': 'volunteering',
+      'name': 'Volunteering',
+      'icon': '🤝',
+      'category': 'faith'
+    },
     {'id': 'missions', 'name': 'Missions', 'icon': '🌍', 'category': 'faith'},
-    {'id': 'youth_ministry', 'name': 'Youth Ministry', 'icon': '👥', 'category': 'faith'},
-    
+    {
+      'id': 'youth_ministry',
+      'name': 'Youth Ministry',
+      'icon': '👥',
+      'category': 'faith'
+    },
     {'id': 'reading', 'name': 'Reading', 'icon': '📚', 'category': 'hobbies'},
-    {'id': 'cooking', 'name': 'Cooking', 'icon': '👨‍🍳', 'category': 'hobbies'},
+    {
+      'id': 'cooking',
+      'name': 'Cooking',
+      'icon': '👨‍🍳',
+      'category': 'hobbies'
+    },
     {'id': 'hiking', 'name': 'Hiking', 'icon': '🥾', 'category': 'hobbies'},
-    {'id': 'photography', 'name': 'Photography', 'icon': '📸', 'category': 'hobbies'},
-    {'id': 'gardening', 'name': 'Gardening', 'icon': '🌱', 'category': 'hobbies'},
+    {
+      'id': 'photography',
+      'name': 'Photography',
+      'icon': '📸',
+      'category': 'hobbies'
+    },
+    {
+      'id': 'gardening',
+      'name': 'Gardening',
+      'icon': '🌱',
+      'category': 'hobbies'
+    },
     {'id': 'art', 'name': 'Art & Crafts', 'icon': '🎨', 'category': 'hobbies'},
-    
     {'id': 'fitness', 'name': 'Fitness', 'icon': '💪', 'category': 'lifestyle'},
     {'id': 'travel', 'name': 'Travel', 'icon': '✈️', 'category': 'lifestyle'},
     {'id': 'music', 'name': 'Music', 'icon': '🎸', 'category': 'lifestyle'},
     {'id': 'movies', 'name': 'Movies', 'icon': '🎬', 'category': 'lifestyle'},
     {'id': 'sports', 'name': 'Sports', 'icon': '⚽', 'category': 'lifestyle'},
-    {'id': 'board_games', 'name': 'Board Games', 'icon': '🎲', 'category': 'lifestyle'},
+    {
+      'id': 'board_games',
+      'name': 'Board Games',
+      'icon': '🎲',
+      'category': 'lifestyle'
+    },
   ];
-  
+
   final List<Map<String, dynamic>> _relationshipGoals = [
-    {'id': 'marriage', 'name': 'Marriage', 'description': 'Looking for a life partner', 'icon': '💒'},
-    {'id': 'serious_dating', 'name': 'Serious Dating', 'description': 'Open to long-term relationship', 'icon': '💕'},
-    {'id': 'getting_to_know', 'name': 'Getting to Know', 'description': 'Taking things slow', 'icon': '🤝'},
-    {'id': 'friendship_first', 'name': 'Friendship First', 'description': 'Building strong foundation', 'icon': '👫'},
+    {
+      'id': 'marriage',
+      'name': 'Marriage',
+      'description': 'Looking for a life partner',
+      'icon': '💒'
+    },
+    {
+      'id': 'serious_dating',
+      'name': 'Serious Dating',
+      'description': 'Open to long-term relationship',
+      'icon': '💕'
+    },
+    {
+      'id': 'getting_to_know',
+      'name': 'Getting to Know',
+      'description': 'Taking things slow',
+      'icon': '🤝'
+    },
+    {
+      'id': 'friendship_first',
+      'name': 'Friendship First',
+      'description': 'Building strong foundation',
+      'icon': '👫'
+    },
   ];
-  
+
   @override
   void initState() {
     super.initState();
@@ -69,18 +127,18 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
     _setupListeners();
     _startAnimations();
   }
-  
+
   void _setupAnimations() {
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    
+
     _chipController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    
+
     // Create staggered animations for sections
     _sectionAnimations = List.generate(3, (index) {
       return Tween<Offset>(
@@ -95,12 +153,12 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
         ),
       ));
     });
-    
+
     // Create staggered animations for interest chips
     _chipAnimations = List.generate(_interests.length, (index) {
       final startTime = (index * 0.03).clamp(0.0, 0.7);
       final endTime = (0.3 + (index * 0.03)).clamp(startTime + 0.1, 1.0);
-      
+
       return Tween<double>(
         begin: 0.0,
         end: 1.0,
@@ -114,21 +172,22 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
       ));
     });
   }
-  
+
   void _loadExistingData() {
     _bioController.text = widget.profileData['bio'] ?? '';
-    _selectedInterests = List<String>.from(widget.profileData['interests'] ?? []);
+    _selectedInterests =
+        List<String>.from(widget.profileData['interests'] ?? []);
     _selectedRelationshipGoal = widget.profileData['relationshipGoal'];
   }
-  
+
   void _setupListeners() {
     _bioController.addListener(() {
       widget.onDataChanged('bio', _bioController.text);
     });
-    
+
     _bioFocusNode.addListener(() => setState(() {}));
   }
-  
+
   void _startAnimations() async {
     await Future.delayed(const Duration(milliseconds: 200));
     if (mounted) {
@@ -137,7 +196,7 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
       if (mounted) _chipController.forward();
     }
   }
-  
+
   @override
   void dispose() {
     _slideController.dispose();
@@ -146,7 +205,7 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
     _bioFocusNode.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -157,26 +216,26 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: AppDimensions.spacing24),
-          
+
           // Bio Section
           _buildBioSection(),
-          
+
           const SizedBox(height: AppDimensions.spacing32),
-          
+
           // Interests Section
           _buildInterestsSection(),
-          
+
           const SizedBox(height: AppDimensions.spacing32),
-          
+
           // Relationship Goals Section
           _buildRelationshipGoalsSection(),
-          
+
           const SizedBox(height: AppDimensions.spacing32),
         ],
       ),
     );
   }
-  
+
   Widget _buildBioSection() {
     return SlideTransition(
       position: _sectionAnimations[0],
@@ -187,7 +246,7 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
             children: [
               Container(
                 padding: const EdgeInsets.all(AppDimensions.spacing8),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: AppColors.loveGradient,
                   shape: BoxShape.circle,
                 ),
@@ -202,54 +261,55 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
                 child: Text(
                   'Tell Your Story',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                 ),
               ),
             ],
           ),
-          
+
           const SizedBox(height: AppDimensions.spacing8),
-          
+
           Text(
             'Share what makes you unique and what you\'re looking for',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
           ),
-          
+
           const SizedBox(height: AppDimensions.spacing16),
-          
+
           // Bio Input
           _buildAnimatedTextField(
             controller: _bioController,
             focusNode: _bioFocusNode,
             labelText: 'About Me',
-            hintText: 'Tell others about your personality, hobbies, and what you\'re passionate about. Share what makes you laugh and what you value in relationships...',
+            hintText:
+                'Tell others about your personality, hobbies, and what you\'re passionate about. Share what makes you laugh and what you value in relationships...',
             maxLines: 6,
           ),
-          
+
           const SizedBox(height: AppDimensions.spacing8),
-          
+
           // Character count
           Align(
             alignment: Alignment.centerRight,
             child: Text(
               '${_bioController.text.length}/500',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: _bioController.text.length > 500 
-                    ? AppColors.error 
-                    : AppColors.textTertiary,
-              ),
+                    color: _bioController.text.length > 500
+                        ? AppColors.error
+                        : AppColors.textTertiary,
+                  ),
             ),
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildInterestsSection() {
     return SlideTransition(
       position: _sectionAnimations[1],
@@ -275,26 +335,26 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
                 child: Text(
                   'Your Interests',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                 ),
               ),
             ],
           ),
-          
+
           const SizedBox(height: AppDimensions.spacing8),
-          
+
           Text(
             'Select what you enjoy doing (choose up to 8)',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
           ),
-          
+
           const SizedBox(height: AppDimensions.spacing16),
-          
+
           // Interest Categories
           _buildInterestCategory('Faith & Ministry', 'faith'),
           const SizedBox(height: AppDimensions.spacing20),
@@ -305,19 +365,20 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
       ),
     );
   }
-  
+
   Widget _buildInterestCategory(String title, String category) {
-    final categoryInterests = _interests.where((i) => i['category'] == category).toList();
-    
+    final categoryInterests =
+        _interests.where((i) => i['category'] == category).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
         ),
         const SizedBox(height: AppDimensions.spacing12),
         Wrap(
@@ -342,11 +403,11 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
       ],
     );
   }
-  
+
   Widget _buildInterestChip(Map<String, dynamic> interest) {
     final isSelected = _selectedInterests.contains(interest['id']);
     final canSelect = _selectedInterests.length < 8 || isSelected;
-    
+
     return GestureDetector(
       onTap: canSelect ? () => _toggleInterest(interest['id']) : null,
       child: AnimatedContainer(
@@ -356,27 +417,29 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
           vertical: AppDimensions.paddingS,
         ),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? AppColors.primary 
-              : canSelect 
-                  ? AppColors.white 
+          color: isSelected
+              ? AppColors.primary
+              : canSelect
+                  ? AppColors.white
                   : AppColors.lightGray,
           borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
           border: Border.all(
-            color: isSelected 
-                ? AppColors.primary 
-                : canSelect 
-                    ? AppColors.border 
+            color: isSelected
+                ? AppColors.primary
+                : canSelect
+                    ? AppColors.border
                     : AppColors.gray,
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ] : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -392,13 +455,13 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
             Text(
               interest['name'],
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: isSelected 
-                    ? AppColors.white 
-                    : canSelect 
-                        ? AppColors.textPrimary 
-                        : AppColors.gray,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              ),
+                    color: isSelected
+                        ? AppColors.white
+                        : canSelect
+                            ? AppColors.textPrimary
+                            : AppColors.gray,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  ),
             ),
             if (isSelected) ...[
               const SizedBox(width: AppDimensions.spacing4),
@@ -413,7 +476,7 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
       ),
     );
   }
-  
+
   Widget _buildRelationshipGoalsSection() {
     return SlideTransition(
       position: _sectionAnimations[2],
@@ -439,26 +502,26 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
                 child: Text(
                   'Relationship Goals',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                 ),
               ),
             ],
           ),
-          
+
           const SizedBox(height: AppDimensions.spacing8),
-          
+
           Text(
             'What are you hoping to find on Holy Love?',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
           ),
-          
+
           const SizedBox(height: AppDimensions.spacing16),
-          
+
           // Relationship Goal Cards
           Column(
             children: _relationshipGoals.map((goal) {
@@ -469,10 +532,10 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
       ),
     );
   }
-  
+
   Widget _buildRelationshipGoalCard(Map<String, dynamic> goal) {
     final isSelected = _selectedRelationshipGoal == goal['id'];
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: AppDimensions.spacing12),
       child: GestureDetector(
@@ -481,19 +544,23 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.all(AppDimensions.paddingL),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.secondary.withOpacity(0.1) : AppColors.white,
+            color: isSelected
+                ? AppColors.secondary.withOpacity(0.1)
+                : AppColors.white,
             borderRadius: BorderRadius.circular(AppDimensions.radiusM),
             border: Border.all(
               color: isSelected ? AppColors.secondary : AppColors.border,
               width: isSelected ? 2 : 1,
             ),
-            boxShadow: isSelected ? [
-              BoxShadow(
-                color: AppColors.secondary.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ] : null,
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.secondary.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             children: [
@@ -501,8 +568,8 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: isSelected 
-                      ? AppColors.secondary.withOpacity(0.2) 
+                  color: isSelected
+                      ? AppColors.secondary.withOpacity(0.2)
                       : AppColors.lightGray,
                   shape: BoxShape.circle,
                 ),
@@ -521,17 +588,19 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
                     Text(
                       goal['name'],
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: isSelected ? AppColors.secondary : AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                            color: isSelected
+                                ? AppColors.secondary
+                                : AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                     const SizedBox(height: AppDimensions.spacing4),
                     Text(
                       goal['description'],
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                        height: 1.4,
-                      ),
+                            color: AppColors.textSecondary,
+                            height: 1.4,
+                          ),
                     ),
                   ],
                 ),
@@ -548,7 +617,7 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
       ),
     );
   }
-  
+
   Widget _buildAnimatedTextField({
     required TextEditingController controller,
     required FocusNode focusNode,
@@ -557,7 +626,7 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
     int maxLines = 1,
   }) {
     final isFocused = focusNode.hasFocus;
-    
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
@@ -583,9 +652,7 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
           labelText: labelText,
           hintText: hintText,
           filled: true,
-          fillColor: isFocused 
-              ? AppColors.white 
-              : AppColors.lightGray,
+          fillColor: isFocused ? AppColors.white : AppColors.lightGray,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusM),
             borderSide: BorderSide.none,
@@ -606,11 +673,11 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
       ),
     );
   }
-  
+
   // Selection methods
   void _toggleInterest(String interestId) {
     HapticFeedback.lightImpact();
-    
+
     setState(() {
       if (_selectedInterests.contains(interestId)) {
         _selectedInterests.remove(interestId);
@@ -618,17 +685,17 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
         _selectedInterests.add(interestId);
       }
     });
-    
+
     widget.onDataChanged('interests', _selectedInterests);
   }
-  
+
   void _selectRelationshipGoal(String goalId) {
     HapticFeedback.lightImpact();
-    
+
     setState(() {
       _selectedRelationshipGoal = goalId;
     });
-    
+
     widget.onDataChanged('relationshipGoal', goalId);
   }
-} 
+}

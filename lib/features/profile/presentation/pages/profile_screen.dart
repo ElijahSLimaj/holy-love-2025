@@ -36,7 +36,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     'location': 'Austin, TX',
     'denomination': 'Non-denominational',
     'occupation': 'Elementary Teacher',
-    'bio': 'Elementary school teacher who loves hiking, worship music, and coffee dates. Looking for someone to share life\'s adventures and grow in faith together! 🌟',
+    'bio':
+        'Elementary school teacher who loves hiking, worship music, and coffee dates. Looking for someone to share life\'s adventures and grow in faith together! 🌟',
     'favoriteVerse': 'Jeremiah 29:11',
     'profileCompletion': 85,
     'totalLikes': 127,
@@ -97,9 +98,15 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     // Setup individual animations for cards
     final cardItems = [
-      'stats', 'completion', 'settings1', 'settings2', 'settings3', 'settings4', 'settings5'
+      'stats',
+      'completion',
+      'settings1',
+      'settings2',
+      'settings3',
+      'settings4',
+      'settings5'
     ];
-    
+
     _cardAnimations = List.generate(cardItems.length, (index) {
       return Tween<double>(
         begin: 0.0,
@@ -120,7 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     if (mounted) {
       _fadeController.forward();
       _headerController.forward();
-      
+
       await Future.delayed(const Duration(milliseconds: 300));
       if (mounted) {
         _listController.forward();
@@ -142,20 +149,20 @@ class _ProfileScreenState extends State<ProfileScreen>
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: AnimatedBuilder(
-        animation: _fadeAnimation,
-        builder: (context, child) {
-          return Opacity(
-            opacity: _fadeAnimation.value.clamp(0.0, 1.0),
+          animation: _fadeAnimation,
+          builder: (context, child) {
+            return Opacity(
+              opacity: _fadeAnimation.value.clamp(0.0, 1.0),
               child: Column(
                 children: [
                   _buildHeader(),
                   Expanded(
-            child: _buildContent(),
+                    child: _buildContent(),
                   ),
                 ],
               ),
-          );
-        },
+            );
+          },
         ),
       ),
     );
@@ -172,7 +179,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             child: Container(
               padding: const EdgeInsets.all(AppDimensions.paddingL),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
@@ -188,10 +195,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                 ],
               ),
-      child: Column(
+              child: Column(
                 children: [
                   Row(
-        children: [
+                    children: [
                       _buildProfileAvatar(),
                       const SizedBox(width: AppDimensions.spacing16),
                       Expanded(
@@ -219,25 +226,25 @@ class _ProfileScreenState extends State<ProfileScreen>
           height: AppDimensions.avatarXL,
           decoration: BoxDecoration(
             color: AppColors.lightGray,
-              shape: BoxShape.circle,
+            shape: BoxShape.circle,
             border: Border.all(
               color: AppColors.primary.withOpacity(0.3),
               width: 3,
             ),
-              boxShadow: [
-                BoxShadow(
+            boxShadow: [
+              BoxShadow(
                 color: AppColors.primary.withOpacity(0.2),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.person,
-              size: 48,
-            color: AppColors.textSecondary,
-            ),
+              ),
+            ],
           ),
+          child: const Icon(
+            Icons.person,
+            size: 48,
+            color: AppColors.textSecondary,
+          ),
+        ),
         if (_currentUser['isVerified'])
           Positioned(
             bottom: 0,
@@ -281,9 +288,9 @@ class _ProfileScreenState extends State<ProfileScreen>
               child: Text(
                 '${_currentUser['firstName']} ${_currentUser['lastName']}',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
               ),
             ),
             if (_currentUser['isPremium'])
@@ -298,13 +305,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                   borderRadius: BorderRadius.circular(AppDimensions.radiusS),
                 ),
-            child: Text(
+                child: Text(
                   'Premium',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 10,
-                  ),
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 10,
+                      ),
                 ),
               ),
           ],
@@ -313,15 +320,15 @@ class _ProfileScreenState extends State<ProfileScreen>
         Text(
           '${_currentUser['age']} • ${_currentUser['location']}',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
-          ),
+                color: AppColors.textSecondary,
+              ),
         ),
         const SizedBox(height: AppDimensions.spacing4),
         Text(
           _currentUser['occupation'],
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: AppColors.textTertiary,
-          ),
+                color: AppColors.textTertiary,
+              ),
         ),
       ],
     );
@@ -335,7 +342,8 @@ class _ProfileScreenState extends State<ProfileScreen>
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
                 const EditProfileScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
               return SlideTransition(
                 position: Tween<Offset>(
                   begin: const Offset(1.0, 0.0),
@@ -394,13 +402,13 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           const SizedBox(width: AppDimensions.spacing8),
           Text(
-            _currentUser['isVerified'] 
-                ? 'Profile Verified' 
+            _currentUser['isVerified']
+                ? 'Profile Verified'
                 : 'Verification Pending',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
-            ),
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
         ],
       ),
@@ -461,9 +469,9 @@ class _ProfileScreenState extends State<ProfileScreen>
           Text(
             AppStrings.settings,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
           ),
 
           const SizedBox(height: AppDimensions.spacing16),
@@ -490,7 +498,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) =>
                   const EditProfileScreen(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
                 return SlideTransition(
                   position: Tween<Offset>(
                     begin: const Offset(1.0, 0.0),
@@ -518,7 +527,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) =>
                   const NotificationSettingsScreen(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
                 return SlideTransition(
                   position: Tween<Offset>(
                     begin: const Offset(0.0, 1.0),
@@ -546,7 +556,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) =>
                   const PrivacySettingsScreen(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
                 return SlideTransition(
                   position: Tween<Offset>(
                     begin: const Offset(0.0, 1.0),
@@ -581,7 +592,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) =>
                   const HelpSupportScreen(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
                 return SlideTransition(
                   position: Tween<Offset>(
                     begin: const Offset(0.0, 1.0),
@@ -603,7 +615,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     return settingsItems.asMap().entries.map((entry) {
       final index = entry.key + 2; // Offset by 2 for stats and completion cards
       final item = entry.value;
-      
+
       return AnimatedBuilder(
         animation: _cardAnimations[index],
         builder: (context, child) {
@@ -640,4 +652,4 @@ class _ProfileScreenState extends State<ProfileScreen>
       ),
     );
   }
-} 
+}

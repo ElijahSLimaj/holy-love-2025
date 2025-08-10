@@ -45,7 +45,7 @@ class CustomButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return SizedBox(
       width: isFullWidth ? double.infinity : customWidth,
       height: _getButtonHeight(),
@@ -75,7 +75,7 @@ class CustomButton extends StatelessWidget {
     if (customColor == null) {
       return _buildGradientButton(theme);
     }
-    
+
     // Fallback to solid color when custom color is provided
     return ElevatedButton(
       onPressed: isLoading ? null : onPressed,
@@ -258,7 +258,7 @@ class CustomButton extends StatelessWidget {
 
   TextStyle _getTextStyle() {
     final baseFontSize = size == ButtonSize.small ? 14.0 : 16.0;
-    
+
     return TextStyle(
       fontSize: baseFontSize,
       fontWeight: FontWeight.w600,
@@ -371,4 +371,4 @@ extension CustomButtonExtensions on CustomButton {
       customWidth: customWidth,
     );
   }
-} 
+}

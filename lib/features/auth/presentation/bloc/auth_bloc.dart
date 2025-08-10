@@ -17,7 +17,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthSignUpWithEmailRequested>(_onSignUpWithEmailRequested);
     on<AuthSignOutRequested>(_onSignOutRequested);
     on<AuthRefreshUserRequested>(_onRefreshUserRequested);
-    
+
     _userSubscription = _authRepository.user.listen(
       (user) => add(_AuthUserChanged(user)),
     );
@@ -39,7 +39,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(state.copyWith(status: AuthStatus.loading));
-    
+
     try {
       await _authRepository.signInWithGoogle();
       // Don't emit here - the user stream will handle it
@@ -58,7 +58,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(state.copyWith(status: AuthStatus.loading));
-    
+
     try {
       await _authRepository.signInWithEmailAndPassword(
         email: event.email,
@@ -80,7 +80,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(state.copyWith(status: AuthStatus.loading));
-    
+
     try {
       await _authRepository.signUpWithEmailAndPassword(
         email: event.email,

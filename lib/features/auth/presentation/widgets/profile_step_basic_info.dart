@@ -28,19 +28,19 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
   final _lastNameController = TextEditingController();
   final _ageController = TextEditingController();
   final _locationController = TextEditingController();
-  
+
   final _firstNameFocusNode = FocusNode();
   final _lastNameFocusNode = FocusNode();
   final _ageFocusNode = FocusNode();
   final _locationFocusNode = FocusNode();
-  
+
   late AnimationController _slideController;
   late List<Animation<Offset>> _fieldAnimations;
-  
+
   // Form validation
   final _formKey = GlobalKey<FormState>();
   Map<String, String> _fieldErrors = {};
-  
+
   @override
   void initState() {
     super.initState();
@@ -49,18 +49,18 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
     _setupListeners();
     _startAnimations();
   }
-  
+
   void _setupAnimations() {
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     // Create staggered animations for each field
     _fieldAnimations = List.generate(4, (index) {
       final startTime = (index * 0.1).clamp(0.0, 0.6);
       final endTime = (0.4 + (index * 0.1)).clamp(startTime + 0.1, 1.0);
-      
+
       return Tween<Offset>(
         begin: const Offset(0, 0.3),
         end: Offset.zero,
@@ -74,46 +74,46 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
       ));
     });
   }
-  
+
   void _loadExistingData() {
     _firstNameController.text = widget.profileData['firstName'] ?? '';
     _lastNameController.text = widget.profileData['lastName'] ?? '';
     _ageController.text = widget.profileData['age']?.toString() ?? '';
     _locationController.text = widget.profileData['location'] ?? '';
   }
-  
+
   void _setupListeners() {
     _firstNameController.addListener(() {
       widget.onDataChanged('firstName', _firstNameController.text);
     });
-    
+
     _lastNameController.addListener(() {
       widget.onDataChanged('lastName', _lastNameController.text);
     });
-    
+
     _ageController.addListener(() {
       final age = int.tryParse(_ageController.text);
       widget.onDataChanged('age', age);
     });
-    
+
     _locationController.addListener(() {
       widget.onDataChanged('location', _locationController.text);
     });
-    
+
     // Focus listeners for animations
     _firstNameFocusNode.addListener(() => setState(() {}));
     _lastNameFocusNode.addListener(() => setState(() {}));
     _ageFocusNode.addListener(() => setState(() {}));
     _locationFocusNode.addListener(() => setState(() {}));
   }
-  
+
   void _startAnimations() async {
     await Future.delayed(const Duration(milliseconds: 200));
     if (mounted) {
       _slideController.forward();
     }
   }
-  
+
   @override
   void dispose() {
     _slideController.dispose();
@@ -127,7 +127,7 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
     _locationFocusNode.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<ProfileCreationBloc, ProfileCreationState>(
@@ -137,7 +137,7 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
           setState(() {
             _fieldErrors = state.fieldErrors ?? {};
           });
-          
+
           // Show error snackbar if general error
           if (state.fieldErrors == null || state.fieldErrors!.isEmpty) {
             _showErrorSnackBar(state.message);
@@ -159,7 +159,7 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
           child: Column(
             children: [
               const SizedBox(height: AppDimensions.spacing24),
-              
+
               // First Name Field
               SlideTransition(
                 position: _fieldAnimations[0],
@@ -182,112 +182,112 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
                   },
                 ),
               ),
-          
-          const SizedBox(height: AppDimensions.spacing20),
-          
-          // Last Name Field
-          SlideTransition(
-            position: _fieldAnimations[1],
-            child: _buildAnimatedTextField(
-              controller: _lastNameController,
-              focusNode: _lastNameFocusNode,
-              labelText: AppStrings.lastName,
-              hintText: 'Enter your last name',
-              textInputAction: TextInputAction.next,
-              onFieldSubmitted: (_) => _ageFocusNode.requestFocus(),
-              errorText: _fieldErrors['lastName'],
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Last name is required';
-                }
-                if (value.trim().length < 2) {
-                  return 'Last name must be at least 2 characters';
-                }
-                return null;
-              },
-            ),
-          ),
-          
-          const SizedBox(height: AppDimensions.spacing20),
-          
-          // Age Field
-          SlideTransition(
-            position: _fieldAnimations[2],
-            child: _buildAnimatedTextField(
-              controller: _ageController,
-              focusNode: _ageFocusNode,
-              labelText: AppStrings.age,
-              hintText: 'Enter your age',
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.next,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(2),
-              ],
-              onFieldSubmitted: (_) => _locationFocusNode.requestFocus(),
-              errorText: _fieldErrors['age'],
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Age is required';
-                }
-                final age = int.tryParse(value);
-                if (age == null) {
-                  return 'Please enter a valid age';
-                }
-                if (age < 18) {
-                  return 'You must be at least 18 years old';
-                }
-                if (age > 100) {
-                  return 'Please enter a valid age';
-                }
-                return null;
-              },
-            ),
-          ),
-          
-          const SizedBox(height: AppDimensions.spacing20),
-          
-          // Location Field
-          SlideTransition(
-            position: _fieldAnimations[3],
-            child: _buildAnimatedTextField(
-              controller: _locationController,
-              focusNode: _locationFocusNode,
-              labelText: AppStrings.location,
-              hintText: 'City, State',
-              textInputAction: TextInputAction.done,
-              suffixIcon: IconButton(
-                onPressed: _detectLocation,
-                icon: const Icon(
-                  Icons.my_location,
-                  color: AppColors.primary,
-                  size: AppDimensions.iconS,
+
+              const SizedBox(height: AppDimensions.spacing20),
+
+              // Last Name Field
+              SlideTransition(
+                position: _fieldAnimations[1],
+                child: _buildAnimatedTextField(
+                  controller: _lastNameController,
+                  focusNode: _lastNameFocusNode,
+                  labelText: AppStrings.lastName,
+                  hintText: 'Enter your last name',
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => _ageFocusNode.requestFocus(),
+                  errorText: _fieldErrors['lastName'],
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Last name is required';
+                    }
+                    if (value.trim().length < 2) {
+                      return 'Last name must be at least 2 characters';
+                    }
+                    return null;
+                  },
                 ),
               ),
-              errorText: _fieldErrors['location'],
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Location is required';
-                }
-                return null;
-              },
-            ),
-          ),
-          
-          const SizedBox(height: AppDimensions.spacing32),
-          
-          // Info Card
-          SlideTransition(
-            position: _fieldAnimations[3],
-            child: _buildInfoCard(),
-          ),
+
+              const SizedBox(height: AppDimensions.spacing20),
+
+              // Age Field
+              SlideTransition(
+                position: _fieldAnimations[2],
+                child: _buildAnimatedTextField(
+                  controller: _ageController,
+                  focusNode: _ageFocusNode,
+                  labelText: AppStrings.age,
+                  hintText: 'Enter your age',
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(2),
+                  ],
+                  onFieldSubmitted: (_) => _locationFocusNode.requestFocus(),
+                  errorText: _fieldErrors['age'],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Age is required';
+                    }
+                    final age = int.tryParse(value);
+                    if (age == null) {
+                      return 'Please enter a valid age';
+                    }
+                    if (age < 18) {
+                      return 'You must be at least 18 years old';
+                    }
+                    if (age > 100) {
+                      return 'Please enter a valid age';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+
+              const SizedBox(height: AppDimensions.spacing20),
+
+              // Location Field
+              SlideTransition(
+                position: _fieldAnimations[3],
+                child: _buildAnimatedTextField(
+                  controller: _locationController,
+                  focusNode: _locationFocusNode,
+                  labelText: AppStrings.location,
+                  hintText: 'City, State',
+                  textInputAction: TextInputAction.done,
+                  suffixIcon: IconButton(
+                    onPressed: _detectLocation,
+                    icon: const Icon(
+                      Icons.my_location,
+                      color: AppColors.primary,
+                      size: AppDimensions.iconS,
+                    ),
+                  ),
+                  errorText: _fieldErrors['location'],
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Location is required';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+
+              const SizedBox(height: AppDimensions.spacing32),
+
+              // Info Card
+              SlideTransition(
+                position: _fieldAnimations[3],
+                child: _buildInfoCard(),
+              ),
             ],
           ),
         ),
       ),
     );
   }
-  
+
   Widget _buildAnimatedTextField({
     required TextEditingController controller,
     required FocusNode focusNode,
@@ -302,7 +302,7 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
     String? Function(String?)? validator,
   }) {
     final isFocused = focusNode.hasFocus;
-    
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
@@ -333,9 +333,7 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
           hintText: hintText,
           suffixIcon: suffixIcon,
           filled: true,
-          fillColor: isFocused 
-              ? AppColors.white 
-              : AppColors.lightGray,
+          fillColor: isFocused ? AppColors.white : AppColors.lightGray,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusM),
             borderSide: BorderSide.none,
@@ -355,7 +353,7 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
       ),
     );
   }
-  
+
   Widget _buildInfoCard() {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.paddingL),
@@ -389,17 +387,17 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
                 Text(
                   'Your Information',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
                 const SizedBox(height: AppDimensions.spacing4),
                 Text(
                   'This information will be visible on your profile to help others get to know you.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                    height: 1.4,
-                  ),
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
                 ),
               ],
             ),
@@ -408,11 +406,11 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
       ),
     );
   }
-  
+
   void _detectLocation() async {
     // TODO: Implement location detection
     HapticFeedback.lightImpact();
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Location detection coming soon!'),
@@ -448,20 +446,21 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
     }
 
     // Extract location components if available
-    final locationParts = _locationController.text.split(',').map((e) => e.trim()).toList();
+    final locationParts =
+        _locationController.text.split(',').map((e) => e.trim()).toList();
     final locationCity = locationParts.isNotEmpty ? locationParts[0] : null;
     final locationState = locationParts.length > 1 ? locationParts[1] : null;
 
     // Save to Firestore via bloc
     context.read<ProfileCreationBloc>().add(
-      SaveBasicInfoRequested(
-        firstName: _firstNameController.text.trim(),
-        lastName: _lastNameController.text.trim(),
-        age: int.parse(_ageController.text),
-        location: _locationController.text.trim(),
-        locationCity: locationCity,
-        locationState: locationState,
-      ),
-    );
+          SaveBasicInfoRequested(
+            firstName: _firstNameController.text.trim(),
+            lastName: _lastNameController.text.trim(),
+            age: int.parse(_ageController.text),
+            location: _locationController.text.trim(),
+            locationCity: locationCity,
+            locationState: locationState,
+          ),
+        );
   }
-} 
+}

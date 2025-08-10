@@ -27,10 +27,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   late List<Animation<double>> _tabAnimations;
   late Animation<double> _fadeAnimation;
   late Animation<double> _toggleScaleAnimation;
-  
+
   int _currentIndex = 0;
   ViewMode _currentViewMode = ViewMode.list;
-  
+
   final List<NavigationTab> _tabs = [
     const NavigationTab(
       icon: Icons.favorite_outline,
@@ -131,13 +131,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
 
   void _onTabTapped(int index) {
     if (index == _currentIndex) return;
-    
+
     HapticFeedback.lightImpact();
-    
+
     setState(() {
       _currentIndex = index;
     });
-    
+
     _pageController.animateToPage(
       index,
       duration: const Duration(milliseconds: 300),
@@ -147,16 +147,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
 
   void _toggleViewMode() {
     if (_currentIndex != 0) return; // Only works on discovery screen
-    
+
     HapticFeedback.mediumImpact();
     _toggleAnimationController.forward().then((_) {
       _toggleAnimationController.reverse();
     });
-    
+
     setState(() {
-      _currentViewMode = _currentViewMode == ViewMode.list 
-          ? ViewMode.swipe 
-          : ViewMode.list;
+      _currentViewMode =
+          _currentViewMode == ViewMode.list ? ViewMode.swipe : ViewMode.list;
     });
   }
 
@@ -226,13 +225,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       child: Row(
         children: [
           ShaderMask(
-            shaderCallback: (bounds) => AppColors.loveGradient.createShader(bounds),
+            shaderCallback: (bounds) =>
+                AppColors.loveGradient.createShader(bounds),
             child: Text(
               AppStrings.appName,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.white,
-              ),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.white,
+                  ),
             ),
           ),
           const Spacer(),
@@ -266,7 +266,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                 borderRadius: BorderRadius.circular(AppDimensions.radiusS),
               ),
               child: Icon(
-                _currentViewMode == ViewMode.list 
+                _currentViewMode == ViewMode.list
                     ? Icons.view_carousel_outlined
                     : Icons.view_list_outlined,
                 color: Colors.white,
@@ -282,7 +282,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   Widget _buildNotificationAction() {
     // Mock unread count - in a real app this would come from a state management solution
     const int unreadCount = 3;
-    
+
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -290,7 +290,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
                 const NotificationsScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
               return SlideTransition(
                 position: Tween<Offset>(
                   begin: const Offset(0.0, -1.0),
@@ -355,16 +356,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     return GestureDetector(
       onTap: () async {
         HapticFeedback.lightImpact();
-        
+
         // Show filter screen as modal
-        final FilterCriteria? result = await showModalBottomSheet<FilterCriteria>(
+        final FilterCriteria? result =
+            await showModalBottomSheet<FilterCriteria>(
           context: context,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
           barrierColor: AppColors.primary.withOpacity(0.2),
           builder: (context) => const DiscoveryFiltersScreen(),
         );
-        
+
         if (result != null) {
           // Handle filter result - in a real app this would update the discovery results
           // For now, just show a snackbar
@@ -429,4 +431,4 @@ class NavigationTab {
     required this.label,
     required this.gradient,
   });
-} 
+}

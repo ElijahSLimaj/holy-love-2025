@@ -71,7 +71,7 @@ class _ProfileStatsCardState extends State<ProfileStatsCard>
     return Container(
       padding: const EdgeInsets.all(AppDimensions.paddingL),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
@@ -123,24 +123,22 @@ class _ProfileStatsCardState extends State<ProfileStatsCard>
                     Text(
                       'Profile Stats',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                     ),
                     Text(
                       'Your activity overview',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                            color: AppColors.textSecondary,
+                          ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          
           const SizedBox(height: AppDimensions.spacing24),
-          
           Row(
             children: [
               Expanded(
@@ -211,21 +209,21 @@ class _ProfileStatsCardState extends State<ProfileStatsCard>
             Text(
               animation.value.toString(),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
             ),
             const SizedBox(height: AppDimensions.spacing4),
             Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
             ),
           ],
         );
       },
     );
   }
-} 
+}

@@ -23,9 +23,11 @@ class _HelpSupportScreenState extends State<HelpSupportScreen>
   final List<HelpArticle> _helpArticles = [
     HelpArticle(
       title: 'How to Create Your Profile',
-      subtitle: 'Learn how to set up your profile to find meaningful connections',
+      subtitle:
+          'Learn how to set up your profile to find meaningful connections',
       icon: Icons.person_add,
-      content: '''Creating your profile is the first step to finding meaningful connections in your faith journey. Here's how to get started:
+      content:
+          '''Creating your profile is the first step to finding meaningful connections in your faith journey. Here's how to get started:
 
 1. **Basic Information**: Start with your name, age, and location
 2. **Faith Details**: Share your denomination and faith journey  
@@ -39,7 +41,8 @@ Remember, authenticity is key to finding genuine connections!''',
       title: 'Understanding Matches',
       subtitle: 'Learn how our matching system works',
       icon: Icons.favorite,
-      content: '''Our matching system is designed to help you find meaningful connections based on shared faith values and compatibility:
+      content:
+          '''Our matching system is designed to help you find meaningful connections based on shared faith values and compatibility:
 
 **How It Works:**
 - We consider your faith preferences, values, and interests
@@ -57,7 +60,8 @@ Remember, authenticity is key to finding genuine connections!''',
       title: 'Messaging Etiquette',
       subtitle: 'Guidelines for respectful communication',
       icon: Icons.message,
-      content: '''Respectful communication is essential for building meaningful connections:
+      content:
+          '''Respectful communication is essential for building meaningful connections:
 
 **Do's:**
 - Start with a thoughtful message about their profile
@@ -105,7 +109,8 @@ Your safety is our responsibility - don't hesitate to reach out!''',
       title: 'Premium Features',
       subtitle: 'Unlock additional features to enhance your experience',
       icon: Icons.star,
-      content: '''Premium features help you make the most of your faith-based dating journey:
+      content:
+          '''Premium features help you make the most of your faith-based dating journey:
 
 **Premium Benefits:**
 - See who liked your profile
@@ -211,7 +216,7 @@ Upgrade anytime to enhance your experience!''',
         opacity: _headerFadeAnimation,
         child: Container(
           padding: const EdgeInsets.all(AppDimensions.paddingL),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: AppColors.loveGradient,
             boxShadow: AppColors.cardShadow,
           ),
@@ -229,7 +234,8 @@ Upgrade anytime to enhance your experience!''',
                       padding: const EdgeInsets.all(AppDimensions.spacing8),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusS),
                       ),
                       child: const Icon(
                         Icons.arrow_back_ios_new,
@@ -298,9 +304,9 @@ Upgrade anytime to enhance your experience!''',
         children: [
           Container(
             padding: const EdgeInsets.all(AppDimensions.paddingL),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: AppColors.loveGradient,
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(AppDimensions.radiusL),
                 topRight: Radius.circular(AppDimensions.radiusL),
               ),
@@ -412,7 +418,7 @@ Upgrade anytime to enhance your experience!''',
                   const SizedBox(height: AppDimensions.spacing4),
                   Text(
                     subtitle,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
@@ -421,7 +427,7 @@ Upgrade anytime to enhance your experience!''',
                 ],
               ),
             ),
-            Icon(
+            const Icon(
               Icons.arrow_forward_ios,
               color: AppColors.textSecondary,
               size: 16,
@@ -443,9 +449,9 @@ Upgrade anytime to enhance your experience!''',
         children: [
           Container(
             padding: const EdgeInsets.all(AppDimensions.paddingL),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: AppColors.loveGradient,
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(AppDimensions.radiusL),
                 topRight: Radius.circular(AppDimensions.radiusL),
               ),
@@ -529,7 +535,7 @@ Upgrade anytime to enhance your experience!''',
                   const SizedBox(height: AppDimensions.spacing4),
                   Text(
                     article.subtitle,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
@@ -538,7 +544,7 @@ Upgrade anytime to enhance your experience!''',
                 ],
               ),
             ),
-            Icon(
+            const Icon(
               Icons.arrow_forward_ios,
               color: AppColors.textSecondary,
               size: 16,
@@ -560,9 +566,9 @@ Upgrade anytime to enhance your experience!''',
         children: [
           Container(
             padding: const EdgeInsets.all(AppDimensions.paddingL),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: AppColors.loveGradient,
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(AppDimensions.radiusL),
                 topRight: Radius.circular(AppDimensions.radiusL),
               ),
@@ -606,7 +612,7 @@ Upgrade anytime to enhance your experience!''',
                   ),
                 ),
                 const SizedBox(height: AppDimensions.spacing8),
-                Text(
+                const Text(
                   'Our support team is here to help you with any questions or concerns you may have.',
                   style: TextStyle(
                     color: AppColors.textSecondary,
@@ -626,7 +632,7 @@ Upgrade anytime to enhance your experience!''',
                   size: ButtonSize.large,
                 ),
                 const SizedBox(height: AppDimensions.spacing16),
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
@@ -634,7 +640,7 @@ Upgrade anytime to enhance your experience!''',
                       color: AppColors.textSecondary,
                       size: 16,
                     ),
-                    const SizedBox(width: AppDimensions.spacing8),
+                    SizedBox(width: AppDimensions.spacing8),
                     Text(
                       'support@holylove.com',
                       style: TextStyle(
@@ -671,9 +677,9 @@ Upgrade anytime to enhance your experience!''',
           children: [
             Container(
               padding: const EdgeInsets.all(AppDimensions.paddingL),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: AppColors.loveGradient,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(AppDimensions.radiusL),
                   topRight: Radius.circular(AppDimensions.radiusL),
                 ),
@@ -684,7 +690,8 @@ Upgrade anytime to enhance your experience!''',
                     padding: const EdgeInsets.all(AppDimensions.spacing8),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusS),
                     ),
                     child: Icon(
                       article.icon,
@@ -709,7 +716,8 @@ Upgrade anytime to enhance your experience!''',
                       padding: const EdgeInsets.all(AppDimensions.spacing8),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusS),
                       ),
                       child: const Icon(
                         Icons.close,
@@ -759,9 +767,9 @@ Upgrade anytime to enhance your experience!''',
           children: [
             Container(
               padding: const EdgeInsets.all(AppDimensions.paddingL),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: AppColors.loveGradient,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(AppDimensions.radiusL),
                   topRight: Radius.circular(AppDimensions.radiusL),
                 ),
@@ -772,7 +780,8 @@ Upgrade anytime to enhance your experience!''',
                     padding: const EdgeInsets.all(AppDimensions.spacing8),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusS),
                     ),
                     child: const Icon(
                       Icons.contact_support,
@@ -797,7 +806,8 @@ Upgrade anytime to enhance your experience!''',
                       padding: const EdgeInsets.all(AppDimensions.spacing8),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusS),
                       ),
                       child: const Icon(
                         Icons.close,
@@ -841,11 +851,14 @@ Upgrade anytime to enhance your experience!''',
                               labelText: 'Subject',
                               hintText: 'Brief description of your issue',
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                                borderRadius: BorderRadius.circular(
+                                    AppDimensions.radiusM),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-                                borderSide: const BorderSide(color: AppColors.primary),
+                                borderRadius: BorderRadius.circular(
+                                    AppDimensions.radiusM),
+                                borderSide:
+                                    const BorderSide(color: AppColors.primary),
                               ),
                             ),
                           ),
@@ -859,11 +872,14 @@ Upgrade anytime to enhance your experience!''',
                                 hintText: 'Describe your issue in detail...',
                                 alignLabelWithHint: true,
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                                  borderRadius: BorderRadius.circular(
+                                      AppDimensions.radiusM),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-                                  borderSide: const BorderSide(color: AppColors.primary),
+                                  borderRadius: BorderRadius.circular(
+                                      AppDimensions.radiusM),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.primary),
                                 ),
                               ),
                             ),
@@ -879,11 +895,13 @@ Upgrade anytime to enhance your experience!''',
                         Navigator.of(context).pop();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: const Text('Message sent! We\'ll get back to you soon.'),
+                            content: const Text(
+                                'Message sent! We\'ll get back to you soon.'),
                             backgroundColor: AppColors.primary,
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                              borderRadius:
+                                  BorderRadius.circular(AppDimensions.radiusM),
                             ),
                           ),
                         );
@@ -914,4 +932,4 @@ class HelpArticle {
     required this.icon,
     required this.content,
   });
-} 
+}

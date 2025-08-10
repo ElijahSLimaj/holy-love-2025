@@ -3,8 +3,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
-
-
 class AuthUser {
   final String id;
   final String email;
@@ -71,7 +69,7 @@ class AuthRepository {
   AuthUser get currentUser {
     final firebaseUser = _firebaseAuth.currentUser;
     if (firebaseUser == null) return AuthUser.empty;
-    
+
     // Note: This won't have the isNewUser flag for cached users
     return AuthUser(
       id: firebaseUser.uid,
@@ -86,18 +84,18 @@ class AuthRepository {
   Future<AuthUser> refreshCurrentUser() async {
     final firebaseUser = _firebaseAuth.currentUser;
     if (firebaseUser == null) return AuthUser.empty;
-    
+
     return await _mapFirebaseUserToAuthUser(firebaseUser);
   }
 
   /// Signs in with Google and returns the [AuthUser].
-  /// 
+  ///
   /// Throws a [SignInWithGoogleFailure] if an exception occurs.
   Future<AuthUser> signInWithGoogle() async {
     try {
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        throw SignInWithGoogleCancelled();
+        throw const SignInWithGoogleCancelled();
       }
 
       final googleAuth = await googleUser.authentication;
@@ -106,19 +104,20 @@ class AuthRepository {
         idToken: googleAuth.idToken,
       );
 
-      final userCredential = await _firebaseAuth.signInWithCredential(credential);
+      final userCredential =
+          await _firebaseAuth.signInWithCredential(credential);
       final firebaseUser = userCredential.user;
-      
+
       if (firebaseUser == null) {
-        throw SignInWithGoogleFailure('Failed to create user');
+        throw const SignInWithGoogleFailure('Failed to create user');
       }
 
       // Check if this is a new user
       final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
-      
+
       // Create or update user document in Firestore
       await _createOrUpdateUserDocument(firebaseUser, isNewUser);
-      
+
       return AuthUser(
         id: firebaseUser.uid,
         email: firebaseUser.email ?? '',
@@ -134,7 +133,7 @@ class AuthRepository {
   }
 
   /// Signs in with email and password and returns the [AuthUser].
-  /// 
+  ///
   /// Throws a [SignInWithEmailAndPasswordFailure] if an exception occurs.
   Future<AuthUser> signInWithEmailAndPassword({
     required String email,
@@ -145,10 +144,10 @@ class AuthRepository {
         email: email,
         password: password,
       );
-      
+
       final firebaseUser = userCredential.user;
       if (firebaseUser == null) {
-        throw SignInWithEmailAndPasswordFailure('Failed to sign in');
+        throw const SignInWithEmailAndPasswordFailure('Failed to sign in');
       }
 
       return await _mapFirebaseUserToAuthUser(firebaseUser);
@@ -162,7 +161,7 @@ class AuthRepository {
   }
 
   /// Creates a new user account with email and password and returns the [AuthUser].
-  /// 
+  ///
   /// Throws a [SignUpWithEmailAndPasswordFailure] if an exception occurs.
   Future<AuthUser> signUpWithEmailAndPassword({
     required String email,
@@ -173,10 +172,10 @@ class AuthRepository {
         email: email,
         password: password,
       );
-      
+
       final firebaseUser = userCredential.user;
       if (firebaseUser == null) {
-        throw SignUpWithEmailAndPasswordFailure('Failed to create user');
+        throw const SignUpWithEmailAndPasswordFailure('Failed to create user');
       }
 
       // Create user document in Firestore
@@ -199,7 +198,7 @@ class AuthRepository {
   }
 
   /// Signs out the current user.
-  /// 
+  ///
   /// Throws a [SignOutFailure] if an exception occurs.
   Future<void> signOut() async {
     try {
@@ -216,17 +215,15 @@ class AuthRepository {
   Future<AuthUser> _mapFirebaseUserToAuthUser(User firebaseUser) async {
     try {
       // Check if user has completed onboarding
-      final userDoc = await _firestore
-          .collection('users')
-          .doc(firebaseUser.uid)
-          .get();
-      
+      final userDoc =
+          await _firestore.collection('users').doc(firebaseUser.uid).get();
+
       // User is considered new if:
       // 1. Document doesn't exist, OR
       // 2. Document exists but profileComplete is false or doesn't exist
-      final isNewUser = !userDoc.exists || 
-                       userDoc.data()?['profileComplete'] != true;
-      
+      final isNewUser =
+          !userDoc.exists || userDoc.data()?['profileComplete'] != true;
+
       return AuthUser(
         id: firebaseUser.uid,
         email: firebaseUser.email ?? '',
@@ -237,9 +234,7 @@ class AuthRepository {
     } catch (e) {
       // If there's a permission error or any other Firestore error,
       // treat the user as new so they can complete their profile
-      debugPrint('⚠️ [AuthRepository] Error reading user document: $e');
-      debugPrint('🔄 [AuthRepository] Treating user as new due to error');
-      
+
       return AuthUser(
         id: firebaseUser.uid,
         email: firebaseUser.email ?? '',
@@ -251,9 +246,10 @@ class AuthRepository {
   }
 
   /// Creates or updates user document in Firestore
-  Future<void> _createOrUpdateUserDocument(User firebaseUser, bool isNewUser) async {
+  Future<void> _createOrUpdateUserDocument(
+      User firebaseUser, bool isNewUser) async {
     final userRef = _firestore.collection('users').doc(firebaseUser.uid);
-    
+
     final userData = <String, dynamic>{
       'email': firebaseUser.email,
       'displayName': firebaseUser.displayName,

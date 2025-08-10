@@ -20,17 +20,16 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen>
-    with TickerProviderStateMixin {
+class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   late AnimationController _slideController;
   late AnimationController _fadeController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
-  
+
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   bool _isTyping = false;
-  bool _isOnline = true;
+  final bool _isOnline = true;
 
   @override
   void initState() {
@@ -72,35 +71,43 @@ class _ChatScreenState extends State<ChatScreen>
     _messages.addAll([
       ChatMessage(
         id: '1',
-        text: 'Hey! Thanks for the match! I love your testimony about serving in children\'s ministry 🙏',
+        text:
+            'Hey! Thanks for the match! I love your testimony about serving in children\'s ministry 🙏',
         isFromCurrentUser: false,
         timestamp: DateTime.now().subtract(const Duration(hours: 2)),
         status: MessageStatus.read,
       ),
       ChatMessage(
         id: '2',
-        text: 'Thank you so much! That means a lot to me. I saw that you\'re into rock climbing - that looks so fun!',
+        text:
+            'Thank you so much! That means a lot to me. I saw that you\'re into rock climbing - that looks so fun!',
         isFromCurrentUser: true,
-        timestamp: DateTime.now().subtract(const Duration(hours: 1, minutes: 45)),
+        timestamp:
+            DateTime.now().subtract(const Duration(hours: 1, minutes: 45)),
         status: MessageStatus.read,
       ),
       ChatMessage(
         id: '3',
-        text: 'It really is! There\'s something so peaceful about being up there, just you and God\'s creation. Have you ever tried it?',
+        text:
+            'It really is! There\'s something so peaceful about being up there, just you and God\'s creation. Have you ever tried it?',
         isFromCurrentUser: false,
-        timestamp: DateTime.now().subtract(const Duration(hours: 1, minutes: 30)),
+        timestamp:
+            DateTime.now().subtract(const Duration(hours: 1, minutes: 30)),
         status: MessageStatus.read,
       ),
       ChatMessage(
         id: '4',
-        text: 'Not yet, but I\'ve always wanted to! Maybe you could show me some beginner-friendly spots? 😊',
+        text:
+            'Not yet, but I\'ve always wanted to! Maybe you could show me some beginner-friendly spots? 😊',
         isFromCurrentUser: true,
-        timestamp: DateTime.now().subtract(const Duration(hours: 1, minutes: 15)),
+        timestamp:
+            DateTime.now().subtract(const Duration(hours: 1, minutes: 15)),
         status: MessageStatus.read,
       ),
       ChatMessage(
         id: '5',
-        text: 'I\'d love to! There\'s this great indoor climbing gym that\'s perfect for beginners. Plus they have a really welcoming community there.',
+        text:
+            'I\'d love to! There\'s this great indoor climbing gym that\'s perfect for beginners. Plus they have a really welcoming community there.',
         isFromCurrentUser: false,
         timestamp: DateTime.now().subtract(const Duration(hours: 1)),
         status: MessageStatus.read,
@@ -120,7 +127,7 @@ class _ChatScreenState extends State<ChatScreen>
     if (mounted) {
       _slideController.forward();
       _fadeController.forward();
-      
+
       // Scroll to bottom after animations
       await Future.delayed(const Duration(milliseconds: 800));
       if (mounted) {
@@ -226,16 +233,18 @@ class _ChatScreenState extends State<ChatScreen>
                 Text(
                   widget.user.fullName,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                 ),
                 Text(
                   _isOnline ? AppStrings.online : widget.user.onlineStatusText,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: _isOnline ? AppColors.success : AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
+                        color: _isOnline
+                            ? AppColors.success
+                            : AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
               ],
             ),
@@ -292,9 +301,9 @@ class _ChatScreenState extends State<ChatScreen>
       itemBuilder: (context, index) {
         final message = _messages[index];
         final previousMessage = index > 0 ? _messages[index - 1] : null;
-        final showAvatar = previousMessage == null || 
+        final showAvatar = previousMessage == null ||
             previousMessage.isFromCurrentUser != message.isFromCurrentUser;
-        
+
         return MessageBubble(
           message: message,
           showAvatar: showAvatar,
@@ -364,7 +373,7 @@ class _ChatScreenState extends State<ChatScreen>
     if (text.trim().isEmpty) return;
 
     HapticFeedback.lightImpact();
-    
+
     final newMessage = ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       text: text.trim(),
@@ -388,7 +397,8 @@ class _ChatScreenState extends State<ChatScreen>
         setState(() {
           final index = _messages.indexWhere((m) => m.id == newMessage.id);
           if (index != -1) {
-            _messages[index] = newMessage.copyWith(status: MessageStatus.delivered);
+            _messages[index] =
+                newMessage.copyWith(status: MessageStatus.delivered);
           }
         });
       }
@@ -450,4 +460,4 @@ enum MessageStatus {
   delivered,
   read,
   failed,
-} 
+}

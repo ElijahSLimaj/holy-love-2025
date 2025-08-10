@@ -48,7 +48,7 @@ class _MessageBubbleState extends State<MessageBubble>
     ));
 
     _slideAnimation = Tween<Offset>(
-      begin: widget.message.isFromCurrentUser 
+      begin: widget.message.isFromCurrentUser
           ? const Offset(0.3, 0)
           : const Offset(-0.3, 0),
       end: Offset.zero,
@@ -155,23 +155,20 @@ class _MessageBubbleState extends State<MessageBubble>
         vertical: AppDimensions.paddingM,
       ),
       decoration: BoxDecoration(
-        gradient: widget.message.isFromCurrentUser
-            ? AppColors.loveGradient
-            : null,
-        color: widget.message.isFromCurrentUser
-            ? null
-            : AppColors.lightGray,
+        gradient:
+            widget.message.isFromCurrentUser ? AppColors.loveGradient : null,
+        color: widget.message.isFromCurrentUser ? null : AppColors.lightGray,
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(AppDimensions.radiusL),
           topRight: const Radius.circular(AppDimensions.radiusL),
           bottomLeft: Radius.circular(
-            widget.message.isFromCurrentUser 
-                ? AppDimensions.radiusL 
+            widget.message.isFromCurrentUser
+                ? AppDimensions.radiusL
                 : AppDimensions.radiusS,
           ),
           bottomRight: Radius.circular(
-            widget.message.isFromCurrentUser 
-                ? AppDimensions.radiusS 
+            widget.message.isFromCurrentUser
+                ? AppDimensions.radiusS
                 : AppDimensions.radiusL,
           ),
         ),
@@ -188,11 +185,11 @@ class _MessageBubbleState extends State<MessageBubble>
       child: Text(
         widget.message.text,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: widget.message.isFromCurrentUser
-              ? AppColors.white
-              : AppColors.textPrimary,
-          height: 1.4,
-        ),
+              color: widget.message.isFromCurrentUser
+                  ? AppColors.white
+                  : AppColors.textPrimary,
+              height: 1.4,
+            ),
       ),
     );
   }
@@ -206,9 +203,9 @@ class _MessageBubbleState extends State<MessageBubble>
       child: Text(
         _formatTime(widget.message.timestamp),
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: AppColors.textTertiary,
-          fontSize: 11,
-        ),
+              color: AppColors.textTertiary,
+              fontSize: 11,
+            ),
       ),
     );
   }
@@ -254,7 +251,7 @@ class _MessageBubbleState extends State<MessageBubble>
         break;
     }
 
-    return Container(
+    return SizedBox(
       width: 20,
       height: 20,
       child: IconTheme(
@@ -263,4 +260,4 @@ class _MessageBubbleState extends State<MessageBubble>
       ),
     );
   }
-} 
+}

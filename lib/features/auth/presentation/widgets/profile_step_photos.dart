@@ -24,10 +24,10 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
     with TickerProviderStateMixin {
   late AnimationController _slideController;
   late List<Animation<Offset>> _photoAnimations;
-  
+
   final int _maxPhotos = 6;
   final List<GlobalKey<_PhotoCardState>> _cardKeys = [];
-  
+
   @override
   void initState() {
     super.initState();
@@ -35,18 +35,18 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
     _initializeCardKeys();
     _startAnimations();
   }
-  
+
   void _setupAnimations() {
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    
+
     // Create staggered animations for photo slots
     _photoAnimations = List.generate(_maxPhotos, (index) {
       final startTime = (index * 0.1).clamp(0.0, 0.5);
       final endTime = (0.6 + (index * 0.1)).clamp(startTime + 0.1, 1.0);
-      
+
       return Tween<Offset>(
         begin: const Offset(0, 0.5),
         end: Offset.zero,
@@ -60,21 +60,21 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
       ));
     });
   }
-  
+
   void _initializeCardKeys() {
     _cardKeys.clear();
     for (int i = 0; i < _maxPhotos; i++) {
       _cardKeys.add(GlobalKey<_PhotoCardState>());
     }
   }
-  
+
   void _startAnimations() async {
     await Future.delayed(const Duration(milliseconds: 200));
     if (mounted) {
       _slideController.forward();
     }
   }
-  
+
   @override
   void dispose() {
     _slideController.dispose();
@@ -95,23 +95,25 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
 
   void _makeMainPhoto(int index) {
     if (index == 0) return;
-    
+
     final currentMainCard = _cardKeys[0].currentState;
     final selectedCard = _cardKeys[index].currentState;
-    
-    if (currentMainCard != null && selectedCard != null && selectedCard.hasPhoto) {
+
+    if (currentMainCard != null &&
+        selectedCard != null &&
+        selectedCard.hasPhoto) {
       final mainPhoto = currentMainCard.photoFile;
       final selectedPhoto = selectedCard.photoFile;
-      
+
       // Swap photos
       currentMainCard.setPhoto(selectedPhoto);
       selectedCard.setPhoto(mainPhoto);
-      
+
       _onPhotoChanged();
       HapticFeedback.lightImpact();
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -121,21 +123,21 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
       child: Column(
         children: [
           const SizedBox(height: AppDimensions.spacing24),
-          
+
           // Photo Grid
           _buildPhotoGrid(),
-          
+
           const SizedBox(height: AppDimensions.spacing32),
-          
+
           // Upload Instructions
           _buildInstructions(),
-          
+
           const SizedBox(height: AppDimensions.spacing32),
         ],
       ),
     );
   }
-  
+
   Widget _buildPhotoGrid() {
     return GridView.builder(
       key: const ValueKey('photo_grid'),
@@ -161,7 +163,7 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
       },
     );
   }
-  
+
   Widget _buildInstructions() {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.paddingL),
@@ -184,7 +186,7 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
                   color: AppColors.accent.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(AppDimensions.radiusS),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.lightbulb_outline,
                   color: AppColors.accent,
                   size: 20,
@@ -194,9 +196,9 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
               Text(
                 'Photo Tips',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
               ),
             ],
           ),
@@ -212,7 +214,7 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
       ),
     );
   }
-  
+
   Widget _buildTip(String emoji, String text) {
     return Row(
       children: [
@@ -225,9 +227,9 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
           child: Text(
             text,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.4,
-            ),
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
           ),
         ),
       ],
@@ -270,13 +272,13 @@ class _PhotoCardState extends State<PhotoCard> {
 
   void _addPhoto() async {
     if (_isLoading) return;
-    
+
     HapticFeedback.lightImpact();
-    
+
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
@@ -284,13 +286,13 @@ class _PhotoCardState extends State<PhotoCard> {
         maxHeight: 1024,
         imageQuality: 85,
       );
-      
+
       if (image != null) {
         setState(() {
           _photoFile = image;
           _isLoading = false;
         });
-        
+
         widget.onPhotoChanged();
         HapticFeedback.mediumImpact();
       } else {
@@ -342,7 +344,8 @@ class _PhotoCardState extends State<PhotoCard> {
               const SizedBox(height: AppDimensions.spacing24),
               if (widget.index != 0)
                 ListTile(
-                  leading: const Icon(Icons.star_outline, color: AppColors.primary),
+                  leading:
+                      const Icon(Icons.star_outline, color: AppColors.primary),
                   title: const Text('Set as main photo'),
                   onTap: () {
                     Navigator.pop(context);
@@ -358,7 +361,8 @@ class _PhotoCardState extends State<PhotoCard> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete_outline, color: AppColors.error),
+                leading:
+                    const Icon(Icons.delete_outline, color: AppColors.error),
                 title: const Text('Remove photo'),
                 onTap: () {
                   Navigator.pop(context);
@@ -413,10 +417,10 @@ class _PhotoCardState extends State<PhotoCard> {
         // Photo
         ClipRRect(
           borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-          child: Container(
+          child: SizedBox(
             width: double.infinity,
             height: double.infinity,
-            child: _isLoading 
+            child: _isLoading
                 ? Container(
                     color: AppColors.lightGray,
                     child: const Center(
@@ -460,7 +464,7 @@ class _PhotoCardState extends State<PhotoCard> {
                   ),
           ),
         ),
-        
+
         // Main photo indicator
         if (widget.index == 0)
           Positioned(
@@ -494,15 +498,15 @@ class _PhotoCardState extends State<PhotoCard> {
                   Text(
                     'Main',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ],
               ),
             ),
           ),
-        
+
         // Remove button
         Positioned(
           top: AppDimensions.spacing8,
@@ -528,7 +532,7 @@ class _PhotoCardState extends State<PhotoCard> {
             ),
           ),
         ),
-        
+
         // Gradient overlay for better button visibility
         Positioned.fill(
           child: Container(
@@ -553,7 +557,7 @@ class _PhotoCardState extends State<PhotoCard> {
   }
 
   Widget _buildEmptySlot() {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: double.infinity,
       child: _isLoading
@@ -572,7 +576,7 @@ class _PhotoCardState extends State<PhotoCard> {
                     color: AppColors.primary.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.add_a_photo_outlined,
                     color: AppColors.primary,
                     size: 24,
@@ -582,12 +586,12 @@ class _PhotoCardState extends State<PhotoCard> {
                 Text(
                   widget.index == 0 ? 'Main Photo' : 'Add Photo',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
               ],
             ),
     );
   }
-} 
+}

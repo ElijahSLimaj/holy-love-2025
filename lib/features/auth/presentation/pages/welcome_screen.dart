@@ -7,11 +7,9 @@ import '../../../../core/constants/app_dimensions.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/app_snackbar.dart';
 import '../bloc/auth_bloc.dart';
-import '../../../main/presentation/pages/main_navigation_screen.dart';
 
 import 'sign_up_screen.dart';
 import 'sign_in_screen.dart';
-import 'profile_creation_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -47,20 +45,20 @@ class WelcomeScreen extends StatelessWidget {
               child: Column(
                 children: [
                   const Spacer(flex: 2),
-                  
+
                   // Hero Section
                   _buildHeroSection(context),
-                  
+
                   const Spacer(flex: 3),
-                  
+
                   // Action Buttons
                   _buildActionButtons(context),
-                  
+
                   const SizedBox(height: AppDimensions.spacing32),
-                  
+
                   // Sign In Link
                   _buildSignInLink(context),
-                  
+
                   const SizedBox(height: AppDimensions.spacing24),
                 ],
               ),
@@ -78,7 +76,7 @@ class WelcomeScreen extends StatelessWidget {
         Container(
           width: 100,
           height: 100,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppColors.white,
             shape: BoxShape.circle,
             boxShadow: AppColors.cardShadow,
@@ -89,21 +87,21 @@ class WelcomeScreen extends StatelessWidget {
             color: AppColors.primary,
           ),
         ),
-        
+
         const SizedBox(height: AppDimensions.spacing32),
-        
+
         // Welcome Text
         Text(
           AppStrings.welcome,
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
           textAlign: TextAlign.center,
         ),
-        
+
         const SizedBox(height: AppDimensions.spacing16),
-        
+
         // Welcome Message
         Padding(
           padding: const EdgeInsets.symmetric(
@@ -112,9 +110,9 @@ class WelcomeScreen extends StatelessWidget {
           child: Text(
             AppStrings.welcomeMessage,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.6,
-            ),
+                  color: AppColors.textSecondary,
+                  height: 1.6,
+                ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -131,17 +129,17 @@ class WelcomeScreen extends StatelessWidget {
           onPressed: () => _navigateToSignUp(context),
           variant: ButtonVariant.primary,
         ),
-        
+
         const SizedBox(height: AppDimensions.spacing16),
-        
+
         // Continue with Google
         BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
             final isLoading = state.status == AuthStatus.loading;
             return CustomButton(
               text: AppStrings.continueWithGoogle,
-              onPressed: isLoading 
-                  ? null 
+              onPressed: isLoading
+                  ? null
                   : () => context.read<AuthBloc>().add(
                         const AuthSignInWithGoogleRequested(),
                       ),
@@ -157,9 +155,9 @@ class WelcomeScreen extends StatelessWidget {
             );
           },
         ),
-        
+
         const SizedBox(height: AppDimensions.spacing12),
-        
+
         // Continue with Apple
         CustomButton(
           text: AppStrings.continueWithApple,
@@ -188,8 +186,8 @@ class WelcomeScreen extends StatelessWidget {
         Text(
           AppStrings.alreadyHaveAccount,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
-          ),
+                color: AppColors.textSecondary,
+              ),
         ),
         const SizedBox(width: AppDimensions.spacing8),
         TextButton(
@@ -202,9 +200,9 @@ class WelcomeScreen extends StatelessWidget {
           child: Text(
             AppStrings.signIn,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
-            ),
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
         ),
       ],
@@ -254,4 +252,4 @@ class WelcomeScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

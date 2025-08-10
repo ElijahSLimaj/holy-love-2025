@@ -20,23 +20,23 @@ class _SignUpScreenState extends State<SignUpScreen>
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   final _emailFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
   final _confirmPasswordFocusNode = FocusNode();
-  
+
   late AnimationController _slideController;
   late AnimationController _fadeController;
   late AnimationController _buttonController;
-  
+
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _buttonScaleAnimation;
-  
+
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-  
+
   @override
   void initState() {
     super.initState();
@@ -44,23 +44,23 @@ class _SignUpScreenState extends State<SignUpScreen>
     _startAnimations();
     _setupFocusListeners();
   }
-  
+
   void _setupAnimations() {
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _buttonController = AnimationController(
       duration: const Duration(milliseconds: 150),
       vsync: this,
     );
-    
+
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
@@ -68,7 +68,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       parent: _slideController,
       curve: Curves.easeOutCubic,
     ));
-    
+
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -76,7 +76,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       parent: _fadeController,
       curve: Curves.easeInOut,
     ));
-    
+
     _buttonScaleAnimation = Tween<double>(
       begin: 1.0,
       end: 0.95,
@@ -85,7 +85,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       curve: Curves.easeInOut,
     ));
   }
-  
+
   void _startAnimations() async {
     await Future.delayed(const Duration(milliseconds: 100));
     if (mounted) {
@@ -94,13 +94,13 @@ class _SignUpScreenState extends State<SignUpScreen>
       if (mounted) _slideController.forward();
     }
   }
-  
+
   void _setupFocusListeners() {
     _emailFocusNode.addListener(() => setState(() {}));
     _passwordFocusNode.addListener(() => setState(() {}));
     _confirmPasswordFocusNode.addListener(() => setState(() {}));
   }
-  
+
   @override
   void dispose() {
     _slideController.dispose();
@@ -114,7 +114,7 @@ class _SignUpScreenState extends State<SignUpScreen>
     _confirmPasswordFocusNode.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -138,30 +138,30 @@ class _SignUpScreenState extends State<SignUpScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: AppDimensions.spacing24),
-                
+
                 // Back Button
                 _buildBackButton(),
-                
+
                 const SizedBox(height: AppDimensions.spacing32),
-                
+
                 // Header Section
                 _buildHeader(),
-                
+
                 const SizedBox(height: AppDimensions.spacing48),
-                
+
                 // Form Section
                 _buildForm(),
-                
+
                 const SizedBox(height: AppDimensions.spacing32),
-                
+
                 // Create Account Button
                 _buildCreateAccountButton(),
-                
+
                 const SizedBox(height: AppDimensions.spacing24),
-                
+
                 // Sign In Link
                 _buildSignInLink(),
-                
+
                 const SizedBox(height: AppDimensions.spacing32),
               ],
             ),
@@ -170,7 +170,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       ),
     );
   }
-  
+
   Widget _buildBackButton() {
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -191,7 +191,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       ),
     );
   }
-  
+
   Widget _buildHeader() {
     return SlideTransition(
       position: _slideAnimation,
@@ -203,24 +203,24 @@ class _SignUpScreenState extends State<SignUpScreen>
             Text(
               AppStrings.createAccount,
               style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
             ),
             const SizedBox(height: AppDimensions.spacing12),
             Text(
               'Join thousands of Christians finding meaningful relationships',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
             ),
           ],
         ),
       ),
     );
   }
-  
+
   Widget _buildForm() {
     return SlideTransition(
       position: _slideAnimation,
@@ -241,9 +241,9 @@ class _SignUpScreenState extends State<SignUpScreen>
                 validator: _validateEmail,
                 onFieldSubmitted: (_) => _passwordFocusNode.requestFocus(),
               ),
-              
+
               const SizedBox(height: AppDimensions.spacing20),
-              
+
               // Password Field
               _buildAnimatedTextField(
                 controller: _passwordController,
@@ -253,14 +253,15 @@ class _SignUpScreenState extends State<SignUpScreen>
                 obscureText: !_isPasswordVisible,
                 textInputAction: TextInputAction.next,
                 validator: _validatePassword,
-                onFieldSubmitted: (_) => _confirmPasswordFocusNode.requestFocus(),
+                onFieldSubmitted: (_) =>
+                    _confirmPasswordFocusNode.requestFocus(),
                 suffixIcon: _buildPasswordToggle(_isPasswordVisible, () {
                   setState(() => _isPasswordVisible = !_isPasswordVisible);
                 }),
               ),
-              
+
               const SizedBox(height: AppDimensions.spacing20),
-              
+
               // Confirm Password Field
               _buildAnimatedTextField(
                 controller: _confirmPasswordController,
@@ -272,7 +273,8 @@ class _SignUpScreenState extends State<SignUpScreen>
                 validator: _validateConfirmPassword,
                 onFieldSubmitted: (_) => _handleSignUp(),
                 suffixIcon: _buildPasswordToggle(_isConfirmPasswordVisible, () {
-                  setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible);
+                  setState(() =>
+                      _isConfirmPasswordVisible = !_isConfirmPasswordVisible);
                 }),
               ),
             ],
@@ -281,7 +283,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       ),
     );
   }
-  
+
   Widget _buildAnimatedTextField({
     required TextEditingController controller,
     required FocusNode focusNode,
@@ -295,7 +297,7 @@ class _SignUpScreenState extends State<SignUpScreen>
     Widget? suffixIcon,
   }) {
     final isFocused = focusNode.hasFocus;
-    
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
@@ -325,9 +327,7 @@ class _SignUpScreenState extends State<SignUpScreen>
           hintText: hintText,
           suffixIcon: suffixIcon,
           filled: true,
-          fillColor: isFocused 
-              ? AppColors.white 
-              : AppColors.lightGray,
+          fillColor: isFocused ? AppColors.white : AppColors.lightGray,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusM),
             borderSide: BorderSide.none,
@@ -361,7 +361,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       ),
     );
   }
-  
+
   Widget _buildPasswordToggle(bool isVisible, VoidCallback onTap) {
     return IconButton(
       onPressed: onTap,
@@ -376,7 +376,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       ),
     );
   }
-  
+
   Widget _buildCreateAccountButton() {
     return SlideTransition(
       position: _slideAnimation,
@@ -394,7 +394,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       ),
     );
   }
-  
+
   Widget _buildSignInLink() {
     return SlideTransition(
       position: _slideAnimation,
@@ -406,8 +406,8 @@ class _SignUpScreenState extends State<SignUpScreen>
             Text(
               AppStrings.alreadyHaveAccount,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
+                    color: AppColors.textSecondary,
+                  ),
             ),
             const SizedBox(width: AppDimensions.spacing8),
             TextButton(
@@ -420,9 +420,9 @@ class _SignUpScreenState extends State<SignUpScreen>
               child: Text(
                 AppStrings.signIn,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
           ],
@@ -430,7 +430,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       ),
     );
   }
-  
+
   // Validation Methods
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
@@ -441,7 +441,7 @@ class _SignUpScreenState extends State<SignUpScreen>
     }
     return null;
   }
-  
+
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return AppStrings.fieldRequired;
@@ -451,7 +451,7 @@ class _SignUpScreenState extends State<SignUpScreen>
     }
     return null;
   }
-  
+
   String? _validateConfirmPassword(String? value) {
     if (value == null || value.isEmpty) {
       return AppStrings.fieldRequired;
@@ -461,38 +461,38 @@ class _SignUpScreenState extends State<SignUpScreen>
     }
     return null;
   }
-  
+
   // Action Methods
   void _handleSignUp() async {
     if (!_formKey.currentState!.validate()) {
       _shakeForm();
       return;
     }
-    
+
     // Button press animation
     _buttonController.forward().then((_) {
       _buttonController.reverse();
     });
-    
+
     // Haptic feedback
     HapticFeedback.lightImpact();
-    
+
     setState(() => _isLoading = true);
-    
+
     // TODO: Implement actual sign up logic
     await Future.delayed(const Duration(seconds: 2));
-    
+
     if (mounted) {
       setState(() => _isLoading = false);
       _showSuccessAndNavigate();
     }
   }
-  
+
   void _shakeForm() {
     // TODO: Add shake animation for validation errors
     HapticFeedback.mediumImpact();
   }
-  
+
   void _showSuccessAndNavigate() {
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
@@ -514,7 +514,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       ),
     );
   }
-  
+
   void _navigateToSignIn() {
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
@@ -527,4 +527,4 @@ class _SignUpScreenState extends State<SignUpScreen>
       ),
     );
   }
-} 
+}

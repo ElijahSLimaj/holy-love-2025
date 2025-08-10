@@ -65,10 +65,10 @@ class _SplashScreenState extends State<SplashScreen>
   void _startAnimations() async {
     await Future.delayed(const Duration(milliseconds: 500));
     if (mounted) _logoController.forward();
-    
+
     await Future.delayed(const Duration(milliseconds: 600));
     if (mounted) _textController.forward();
-    
+
     // Auto-navigate after animations complete
     await Future.delayed(const Duration(milliseconds: 2500));
     if (mounted) {
@@ -109,7 +109,7 @@ class _SplashScreenState extends State<SplashScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Spacer(flex: 2),
-                
+
                 // Logo Animation
                 AnimatedBuilder(
                   animation: _logoAnimation,
@@ -123,9 +123,9 @@ class _SplashScreenState extends State<SplashScreen>
                     );
                   },
                 ),
-                
+
                 const SizedBox(height: AppDimensions.spacing32),
-                
+
                 // Text Animation
                 AnimatedBuilder(
                   animation: _textAnimation,
@@ -139,9 +139,9 @@ class _SplashScreenState extends State<SplashScreen>
                     );
                   },
                 ),
-                
+
                 const Spacer(flex: 2),
-                
+
                 // Skip button (optional)
                 Padding(
                   padding: const EdgeInsets.all(AppDimensions.paddingL),
@@ -150,13 +150,13 @@ class _SplashScreenState extends State<SplashScreen>
                     child: Text(
                       AppStrings.skip,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.white.withOpacity(0.8),
-                        fontWeight: FontWeight.w500,
-                      ),
+                            color: AppColors.white.withOpacity(0.8),
+                            fontWeight: FontWeight.w500,
+                          ),
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: AppDimensions.spacing16),
               ],
             ),
@@ -195,22 +195,22 @@ class _SplashScreenState extends State<SplashScreen>
         Text(
           AppStrings.appName,
           style: Theme.of(context).textTheme.displayMedium?.copyWith(
-            color: AppColors.white,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.2,
-          ),
+                color: AppColors.white,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
         ),
         const SizedBox(height: AppDimensions.spacing8),
         Text(
           AppStrings.appTagline,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: AppColors.white.withOpacity(0.9),
-            fontWeight: FontWeight.w400,
-            letterSpacing: 0.5,
-          ),
+                color: AppColors.white.withOpacity(0.9),
+                fontWeight: FontWeight.w400,
+                letterSpacing: 0.5,
+              ),
           textAlign: TextAlign.center,
         ),
       ],
     );
   }
-} 
+}

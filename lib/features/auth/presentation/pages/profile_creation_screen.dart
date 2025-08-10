@@ -24,47 +24,47 @@ class ProfileCreationScreen extends StatefulWidget {
 class _ProfileCreationScreenState extends State<ProfileCreationScreen>
     with TickerProviderStateMixin {
   final PageController _pageController = PageController();
-  
+
   late AnimationController _progressController;
   late AnimationController _slideController;
   late AnimationController _fadeController;
-  
+
   late Animation<double> _progressAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
-  
+
   int _currentStep = 0;
   final int _totalSteps = 5;
-  
+
   // Profile data
   final Map<String, dynamic> _profileData = {};
-  
+
   // Step widget keys
   final GlobalKey<ProfileStepBasicInfoState> _basicInfoKey = GlobalKey();
-  
+
   @override
   void initState() {
     super.initState();
     _setupAnimations();
     _startAnimations();
   }
-  
+
   void _setupAnimations() {
     _progressController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    
+
     _progressAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -72,7 +72,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
       parent: _progressController,
       curve: Curves.easeInOut,
     ));
-    
+
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.1),
       end: Offset.zero,
@@ -80,7 +80,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
       parent: _slideController,
       curve: Curves.easeOutCubic,
     ));
-    
+
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -89,7 +89,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
       curve: Curves.easeInOut,
     ));
   }
-  
+
   void _startAnimations() async {
     await Future.delayed(const Duration(milliseconds: 100));
     if (mounted) {
@@ -101,12 +101,12 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
       }
     }
   }
-  
+
   void _updateProgress() {
     final targetProgress = (_currentStep + 1) / _totalSteps;
     _progressController.animateTo(targetProgress);
   }
-  
+
   @override
   void dispose() {
     _progressController.dispose();
@@ -115,7 +115,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
     _pageController.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -154,12 +154,12 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
                 children: [
                   // Header with progress
                   _buildHeader(),
-                  
+
                   // Page content
                   Expanded(
                     child: _buildPageView(),
                   ),
-                  
+
                   // Navigation buttons
                   _buildNavigationButtons(),
                 ],
@@ -170,7 +170,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
       ),
     );
   }
-  
+
   Widget _buildHeader() {
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -191,55 +191,54 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
                   style: IconButton.styleFrom(
                     backgroundColor: AppColors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusM),
                     ),
                     padding: const EdgeInsets.all(AppDimensions.paddingS),
                   ),
                 ),
-                
                 const Spacer(),
-                
                 Text(
                   '${_currentStep + 1} of $_totalSteps',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: AppDimensions.spacing20),
-            
+
             // Progress bar
             _buildProgressBar(),
-            
+
             const SizedBox(height: AppDimensions.spacing24),
-            
+
             // Step title
             SlideTransition(
               position: _slideAnimation,
               child: Text(
                 _getStepTitle(),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                 textAlign: TextAlign.center,
               ),
             ),
-            
+
             const SizedBox(height: AppDimensions.spacing8),
-            
+
             // Step subtitle
             SlideTransition(
               position: _slideAnimation,
               child: Text(
                 _getStepSubtitle(),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -248,7 +247,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
       ),
     );
   }
-  
+
   Widget _buildProgressBar() {
     return Container(
       height: 4,
@@ -273,7 +272,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
       ),
     );
   }
-  
+
   Widget _buildPageView() {
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -313,7 +312,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
       ),
     );
   }
-  
+
   Widget _buildNavigationButtons() {
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -331,16 +330,16 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
                   isFullWidth: true,
                 ),
               ),
-            
+
             if (_canSkipCurrentStep())
               const SizedBox(width: AppDimensions.spacing16),
-            
+
             // Continue/Finish button
             Expanded(
               flex: _canSkipCurrentStep() ? 2 : 1,
               child: CustomButton(
-                text: _currentStep == _totalSteps - 1 
-                    ? 'Complete Profile' 
+                text: _currentStep == _totalSteps - 1
+                    ? 'Complete Profile'
                     : AppStrings.continueText,
                 onPressed: _isCurrentStepValid() ? _nextStep : null,
                 variant: ButtonVariant.primary,
@@ -352,7 +351,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
       ),
     );
   }
-  
+
   // Step management
   void _nextStep() async {
     // Save data for specific steps before proceeding
@@ -362,25 +361,25 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
       // The actual navigation will happen via the onStepCompleted callback
       return;
     }
-    
+
     if (_currentStep < _totalSteps - 1) {
       // Animate out current step
       await _slideController.reverse();
-      
+
       setState(() {
         _currentStep++;
       });
-      
+
       // Update page
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-      
+
       // Animate in new step
       _slideController.forward();
       _updateProgress();
-      
+
       // Haptic feedback
       HapticFeedback.lightImpact();
     } else {
@@ -388,87 +387,87 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
       _completeProfileCreation();
     }
   }
-  
+
   void _moveToNextStepAfterSave() async {
     if (_currentStep < _totalSteps - 1) {
       // Animate out current step
       await _slideController.reverse();
-      
+
       setState(() {
         _currentStep++;
       });
-      
+
       // Update page
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-      
+
       // Animate in new step
       _slideController.forward();
       _updateProgress();
-      
+
       // Haptic feedback
       HapticFeedback.lightImpact();
     }
   }
-  
+
   void _previousStep() async {
     if (_currentStep > 0) {
       // Animate out current step
       await _slideController.reverse();
-      
+
       setState(() {
         _currentStep--;
       });
-      
+
       // Update page
       _pageController.previousPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-      
+
       // Animate in previous step
       _slideController.forward();
       _updateProgress();
-      
+
       // Haptic feedback
       HapticFeedback.lightImpact();
     }
   }
-  
+
   void _handleBack() {
     Navigator.of(context).pop();
   }
-  
+
   void _updateProfileData(String key, dynamic value) {
     setState(() {
       _profileData[key] = value;
     });
   }
-  
+
   void _completeProfileCreation() async {
     // Mark profile as complete using the bloc
     context.read<ProfileCreationBloc>().add(
-      CompleteProfileRequested(
-        allProfileData: _profileData,
-      ),
-    );
-    
+          CompleteProfileRequested(
+            allProfileData: _profileData,
+          ),
+        );
+
     // Show success animation
     await _showCompletionAnimation();
-    
+
     if (mounted) {
       // Refresh the auth user state to reflect profile completion
       context.read<AuthBloc>().add(const AuthRefreshUserRequested());
       _navigateToMainApp();
     }
   }
-  
+
   Future<void> _showCompletionAnimation() async {
     // TODO: Implement beautiful completion animation
     HapticFeedback.mediumImpact();
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -488,34 +487,34 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
             Text(
               'Profile Complete!',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
             ),
             const SizedBox(height: AppDimensions.spacing8),
             Text(
               'Welcome to Holy Love! Let\'s find your perfect match.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
         ),
       ),
     );
-    
+
     await Future.delayed(const Duration(seconds: 2));
     _navigateToMainApp();
   }
-  
+
   void _navigateToMainApp() {
     Navigator.of(context).pop(); // Close dialog
     // Pop to root and let the auth bloc handle navigation
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
-  
+
   // Helper methods
   String _getStepTitle() {
     switch (_currentStep) {
@@ -533,7 +532,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
         return '';
     }
   }
-  
+
   String _getStepSubtitle() {
     switch (_currentStep) {
       case 0:
@@ -550,18 +549,17 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
         return '';
     }
   }
-  
+
   bool _canSkipCurrentStep() {
     // Only allow skipping optional steps
     return _currentStep == 1 || _currentStep == 3; // Photos and About steps
   }
-  
+
   bool _isCurrentStepValid() {
     // TODO: Implement validation for each step
     switch (_currentStep) {
       case 0: // Basic info
-        return _profileData['firstName'] != null && 
-               _profileData['age'] != null;
+        return _profileData['firstName'] != null && _profileData['age'] != null;
       case 1: // Photos
         return true; // Optional step
       case 2: // Faith
@@ -574,4 +572,4 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
         return false;
     }
   }
-} 
+}

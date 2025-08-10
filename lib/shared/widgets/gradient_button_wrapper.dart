@@ -22,9 +22,9 @@ class GradientButtonWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBorderRadius = borderRadius ?? 
-        BorderRadius.circular(AppDimensions.radiusM);
-    
+    final effectiveBorderRadius =
+        borderRadius ?? BorderRadius.circular(AppDimensions.radiusM);
+
     return Container(
       decoration: BoxDecoration(
         gradient: AppColors.loveGradient,
@@ -37,10 +37,11 @@ class GradientButtonWrapper extends StatelessWidget {
           onTap: onPressed,
           borderRadius: effectiveBorderRadius,
           child: Container(
-            padding: padding ?? const EdgeInsets.symmetric(
-              horizontal: AppDimensions.buttonPaddingHorizontal,
-              vertical: AppDimensions.buttonPaddingVertical,
-            ),
+            padding: padding ??
+                const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.buttonPaddingHorizontal,
+                  vertical: AppDimensions.buttonPaddingVertical,
+                ),
             child: child,
           ),
         ),
@@ -65,4 +66,4 @@ extension GradientWrapper on Widget {
       child: this,
     );
   }
-} 
+}

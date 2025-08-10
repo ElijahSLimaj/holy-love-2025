@@ -55,7 +55,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   late AnimationController _fadeController;
   late AnimationController _headerController;
   late AnimationController _listController;
-  
+
   late Animation<double> _fadeAnimation;
   late Animation<double> _headerFadeAnimation;
   late Animation<Offset> _headerSlideAnimation;
@@ -65,7 +65,13 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   String _selectedFilter = 'All';
   bool _isLoading = true;
 
-  final List<String> _filterOptions = ['All', 'Matches', 'Messages', 'Likes', 'Faith'];
+  final List<String> _filterOptions = [
+    'All',
+    'Matches',
+    'Messages',
+    'Likes',
+    'Faith'
+  ];
 
   @override
   void initState() {
@@ -80,12 +86,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _headerController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _listController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
@@ -118,13 +124,14 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
   void _loadNotifications() {
     final profiles = MockUsers.sampleProfiles;
-    
+
     _notifications = [
       NotificationItem(
         id: '1',
         type: NotificationType.match,
         title: 'New Match! 💕',
-        message: 'You and ${profiles[0].firstName} liked each other! Start a conversation now.',
+        message:
+            'You and ${profiles[0].firstName} liked each other! Start a conversation now.',
         timestamp: DateTime.now().subtract(const Duration(minutes: 30)),
         user: profiles[0],
         onTap: () => _navigateToProfile(profiles[0]),
@@ -133,7 +140,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         id: '2',
         type: NotificationType.message,
         title: 'New Message from ${profiles[1].firstName}',
-        message: 'Hey! I love your testimony about serving in children\'s ministry 🙏',
+        message:
+            'Hey! I love your testimony about serving in children\'s ministry 🙏',
         timestamp: DateTime.now().subtract(const Duration(hours: 1)),
         user: profiles[1],
         onTap: () => _navigateToChat(profiles[1]),
@@ -151,7 +159,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         id: '4',
         type: NotificationType.verseShare,
         title: 'Daily Verse Shared',
-        message: '${profiles[3].firstName} shared their favorite verse: "For I know the plans I have for you..."',
+        message:
+            '${profiles[3].firstName} shared their favorite verse: "For I know the plans I have for you..."',
         timestamp: DateTime.now().subtract(const Duration(hours: 6)),
         user: profiles[3],
         onTap: () => _navigateToChat(profiles[3]),
@@ -160,14 +169,16 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         id: '5',
         type: NotificationType.view,
         title: 'Profile Views',
-        message: '5 people viewed your profile today! Keep your profile updated.',
+        message:
+            '5 people viewed your profile today! Keep your profile updated.',
         timestamp: DateTime.now().subtract(const Duration(hours: 8)),
       ),
       NotificationItem(
         id: '6',
         type: NotificationType.prayerRequest,
         title: 'Prayer Request Response',
-        message: '${profiles[4].firstName} responded to your prayer request with encouragement.',
+        message:
+            '${profiles[4].firstName} responded to your prayer request with encouragement.',
         timestamp: DateTime.now().subtract(const Duration(hours: 12)),
         user: profiles[4],
         onTap: () => _navigateToChat(profiles[4]),
@@ -176,7 +187,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         id: '7',
         type: NotificationType.churchEvent,
         title: 'Local Church Event',
-        message: 'New Christian singles event near you this Saturday - "Faith & Fellowship"',
+        message:
+            'New Christian singles event near you this Saturday - "Faith & Fellowship"',
         timestamp: DateTime.now().subtract(const Duration(days: 1)),
       ),
       NotificationItem(
@@ -192,14 +204,16 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         id: '9',
         type: NotificationType.premium,
         title: 'Premium Feature Available',
-        message: 'See who liked you first! Upgrade to Premium for enhanced matching.',
+        message:
+            'See who liked you first! Upgrade to Premium for enhanced matching.',
         timestamp: DateTime.now().subtract(const Duration(days: 2)),
       ),
       NotificationItem(
         id: '10',
         type: NotificationType.match,
         title: 'Another Match! ✨',
-        message: 'You and ${profiles[6].firstName} are both looking for meaningful connections.',
+        message:
+            'You and ${profiles[6].firstName} are both looking for meaningful connections.',
         timestamp: DateTime.now().subtract(const Duration(days: 2)),
         user: profiles[6],
         onTap: () => _navigateToProfile(profiles[6]),
@@ -207,7 +221,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     ];
 
     _applyFilter();
-    
+
     setState(() {
       _isLoading = false;
     });
@@ -224,12 +238,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           case 'Messages':
             return notification.type == NotificationType.message;
           case 'Likes':
-            return notification.type == NotificationType.like || 
-                   notification.type == NotificationType.view;
+            return notification.type == NotificationType.like ||
+                notification.type == NotificationType.view;
           case 'Faith':
             return notification.type == NotificationType.prayerRequest ||
-                   notification.type == NotificationType.verseShare ||
-                   notification.type == NotificationType.churchEvent;
+                notification.type == NotificationType.verseShare ||
+                notification.type == NotificationType.churchEvent;
           default:
             return true;
         }
@@ -242,7 +256,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     if (mounted) {
       _fadeController.forward();
       _headerController.forward();
-      
+
       await Future.delayed(const Duration(milliseconds: 400));
       if (mounted) {
         _listController.forward();
@@ -333,7 +347,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       padding: const EdgeInsets.all(AppDimensions.paddingS),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusM),
                       ),
                       child: const Icon(
                         Icons.arrow_back_ios_new,
@@ -349,16 +364,20 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       children: [
                         Text(
                           AppStrings.notifications,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                         ),
                         Text(
                           '${_notifications.where((n) => !n.isRead).length} unread • ${_filteredNotifications.length} total',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
                         ),
                       ],
                     ),
@@ -372,7 +391,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       padding: const EdgeInsets.all(AppDimensions.paddingS),
                       decoration: BoxDecoration(
                         gradient: AppColors.loveGradient,
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusM),
                       ),
                       child: const Icon(
                         Icons.done_all,
@@ -398,15 +418,17 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           opacity: _headerFadeAnimation,
           child: Container(
             height: 50,
-            margin: const EdgeInsets.only(top: AppDimensions.spacing8, bottom: AppDimensions.spacing8),
+            margin: const EdgeInsets.only(
+                top: AppDimensions.spacing8, bottom: AppDimensions.spacing8),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingL),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.paddingL),
               itemCount: _filterOptions.length,
               itemBuilder: (context, index) {
                 final filter = _filterOptions[index];
                 final isSelected = _selectedFilter == filter;
-                
+
                 return GestureDetector(
                   onTap: () {
                     HapticFeedback.selectionClick();
@@ -417,7 +439,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
-                    margin: const EdgeInsets.only(right: AppDimensions.spacing12),
+                    margin:
+                        const EdgeInsets.only(right: AppDimensions.spacing12),
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppDimensions.paddingM,
                       vertical: 8,
@@ -425,11 +448,11 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                     decoration: BoxDecoration(
                       gradient: isSelected ? AppColors.loveGradient : null,
                       color: isSelected ? null : AppColors.cardBackground,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusL),
                       border: Border.all(
-                        color: isSelected 
-                            ? Colors.transparent 
-                            : AppColors.border,
+                        color:
+                            isSelected ? Colors.transparent : AppColors.border,
                         width: 1,
                       ),
                       boxShadow: isSelected ? AppColors.cardShadow : null,
@@ -439,8 +462,10 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       child: Text(
                         filter,
                         style: TextStyle(
-                          color: isSelected ? Colors.white : AppColors.textPrimary,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color:
+                              isSelected ? Colors.white : AppColors.textPrimary,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w500,
                           fontSize: 14,
                           height: 1.2,
                         ),
@@ -476,20 +501,23 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               itemCount: _filteredNotifications.length,
               itemBuilder: (context, index) {
                 final notification = _filteredNotifications[index];
-                
+
                 return AnimatedBuilder(
                   animation: _listController,
                   builder: (context, child) {
                     final delay = index * 0.1;
-                    final progress = (_listController.value - delay).clamp(0.0, 1.0);
-                    final animationValue = Curves.easeOut.transform(progress).clamp(0.0, 1.0);
-                    
+                    final progress =
+                        (_listController.value - delay).clamp(0.0, 1.0);
+                    final animationValue =
+                        Curves.easeOut.transform(progress).clamp(0.0, 1.0);
+
                     return Transform.translate(
                       offset: Offset(30 * (1 - animationValue), 0),
                       child: Opacity(
                         opacity: animationValue,
                         child: Container(
-                          margin: const EdgeInsets.only(bottom: AppDimensions.spacing12),
+                          margin: const EdgeInsets.only(
+                              bottom: AppDimensions.spacing12),
                           child: _buildNotificationTile(notification),
                         ),
                       ),
@@ -514,23 +542,25 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       child: Container(
         padding: const EdgeInsets.all(AppDimensions.paddingM),
         decoration: BoxDecoration(
-          color: notification.isRead 
-              ? AppColors.cardBackground 
+          color: notification.isRead
+              ? AppColors.cardBackground
               : AppColors.primary.withOpacity(0.05),
           borderRadius: BorderRadius.circular(AppDimensions.radiusM),
           border: Border.all(
-            color: notification.isRead 
-                ? AppColors.border 
+            color: notification.isRead
+                ? AppColors.border
                 : AppColors.primary.withOpacity(0.2),
             width: 1,
           ),
-          boxShadow: notification.isRead ? null : [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: notification.isRead
+              ? null
+              : [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -550,7 +580,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               ),
             ),
             const SizedBox(width: AppDimensions.spacing12),
-            
+
             // Notification content
             Expanded(
               child: Column(
@@ -561,10 +591,11 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       Expanded(
                         child: Text(
                           notification.title,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
                         ),
                       ),
                       if (!notification.isRead)
@@ -582,9 +613,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   Text(
                     notification.message,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                      height: 1.4,
-                    ),
+                          color: AppColors.textSecondary,
+                          height: 1.4,
+                        ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -592,13 +623,13 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   Text(
                     _formatTimestamp(notification.timestamp),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                          color: AppColors.textSecondary,
+                        ),
                   ),
                 ],
               ),
             ),
-            
+
             // User avatar if available
             if (notification.user != null)
               Container(
@@ -613,7 +644,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   ),
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusM - 2),
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusM - 2),
                   child: Image.network(
                     notification.user!.photoUrls.first,
                     fit: BoxFit.cover,
@@ -656,16 +688,16 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           Text(
             'No ${_selectedFilter == 'All' ? '' : _selectedFilter.toLowerCase()} notifications',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           const SizedBox(height: AppDimensions.spacing8),
           Text(
             'When something happens, you\'ll see it here!',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-            ),
+                  color: AppColors.textSecondary,
+                ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -826,4 +858,4 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       ),
     );
   }
-} 
+}
