@@ -9,7 +9,7 @@ import '../models/location_data.dart';
 class LocationService {
   static const String _baseUrl = 'https://maps.googleapis.com/maps/api';
 
-  // TODO: Add your Google Places API key to environment variables or Firebase config
+  // TODO: Add Google Places API key to environment variables or Firebase config
   static const String _apiKey = 'API KEY';
 
   // Cache for recent searches to reduce API calls
