@@ -81,3 +81,93 @@ class CompleteProfileRequested extends ProfileCreationEvent {
   @override
   List<Object?> get props => [allProfileData];
 }
+
+class SavePhotosRequested extends ProfileCreationEvent {
+  final List<String> photoPaths;
+
+  const SavePhotosRequested({
+    required this.photoPaths,
+  });
+
+  @override
+  List<Object?> get props => [photoPaths];
+}
+
+class UploadPhotoRequested extends ProfileCreationEvent {
+  final String photoPath;
+  final int index;
+
+  const UploadPhotoRequested({
+    required this.photoPath,
+    required this.index,
+  });
+
+  @override
+  List<Object?> get props => [photoPath, index];
+}
+
+class SaveFaithInfoRequested extends ProfileCreationEvent {
+  final String? denomination;
+  final String? churchAttendance;
+  final String? favoriteBibleVerse;
+  final String? faithStory;
+
+  const SaveFaithInfoRequested({
+    this.denomination,
+    this.churchAttendance,
+    this.favoriteBibleVerse,
+    this.faithStory,
+  });
+
+  @override
+  List<Object?> get props => [
+    denomination,
+    churchAttendance,
+    favoriteBibleVerse,
+    faithStory,
+  ];
+}
+
+class SaveAboutInfoRequested extends ProfileCreationEvent {
+  final String? bio;
+  final List<String> interests;
+  final String? relationshipGoal;
+
+  const SaveAboutInfoRequested({
+    this.bio,
+    required this.interests,
+    this.relationshipGoal,
+  });
+
+  @override
+  List<Object?> get props => [
+    bio,
+    interests,
+    relationshipGoal,
+  ];
+}
+
+class SavePreferencesInfoRequested extends ProfileCreationEvent {
+  final int ageRangeMin;
+  final int ageRangeMax;
+  final int maxDistance;
+  final String? faithImportance;
+  final List<String> dealBreakers;
+
+  const SavePreferencesInfoRequested({
+    required this.ageRangeMin,
+    required this.ageRangeMax,
+    required this.maxDistance,
+    this.faithImportance,
+    required this.dealBreakers,
+  });
+
+  @override
+  List<Object?> get props => [
+    ageRangeMin,
+    ageRangeMax,
+    maxDistance,
+    faithImportance,
+    dealBreakers,
+  ];
+}

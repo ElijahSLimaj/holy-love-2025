@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
-
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../profile/presentation/bloc/profile_creation_bloc.dart';
 
 class ProfileStepPreferences extends StatefulWidget {
   final Map<String, dynamic> profileData;
   final Function(String, dynamic) onDataChanged;
+  final VoidCallback? onStepCompleted;
 
   const ProfileStepPreferences({
     super.key,
     required this.profileData,
     required this.onDataChanged,
+    this.onStepCompleted,
   });
 
   @override
-  State<ProfileStepPreferences> createState() => _ProfileStepPreferencesState();
+  State<ProfileStepPreferences> createState() => ProfileStepPreferencesState();
 }
 
-class _ProfileStepPreferencesState extends State<ProfileStepPreferences>
+class ProfileStepPreferencesState extends State<ProfileStepPreferences>
     with TickerProviderStateMixin {
   late AnimationController _slideController;
   late AnimationController _sliderController;
@@ -142,7 +145,15 @@ class _ProfileStepPreferencesState extends State<ProfileStepPreferences>
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    return BlocListener<ProfileCreationBloc, ProfileCreationState>(
+      listener: (context, state) {
+        if (state is ProfileCreationStepCompleted && state.stepName == 'preferences') {
+          widget.onStepCompleted?.call();
+        } else if (state is ProfileCreationSuccess) {
+          widget.onStepCompleted?.call();
+        }
+      },
+      child: SingleChildScrollView(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.screenPaddingHorizontal,
       ),
@@ -171,6 +182,7 @@ class _ProfileStepPreferencesState extends State<ProfileStepPreferences>
 
           const SizedBox(height: AppDimensions.spacing32),
         ],
+      ),
       ),
     );
   }
@@ -752,5 +764,20 @@ class _ProfileStepPreferencesState extends State<ProfileStepPreferences>
     });
 
     widget.onDataChanged('dealBreakers', _selectedDealBreakers);
+  }
+
+  /// Save preferences information to database
+  Future<void> savePreferencesInfo() async {
+    if (mounted) {
+      context.read<ProfileCreationBloc>().add(
+        SavePreferencesInfoRequested(
+          ageRangeMin: _ageRange.start.round(),
+          ageRangeMax: _ageRange.end.round(),
+          maxDistance: _maxDistance.round(),
+          faithImportance: _selectedFaithImportance,
+          dealBreakers: _selectedDealBreakers,
+        ),
+      );
+    }
   }
 }

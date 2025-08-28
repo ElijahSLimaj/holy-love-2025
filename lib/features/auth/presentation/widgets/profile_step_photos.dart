@@ -2,31 +2,37 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../profile/presentation/bloc/profile_creation_bloc.dart';
 
 class ProfileStepPhotos extends StatefulWidget {
   final Map<String, dynamic> profileData;
   final Function(String, dynamic) onDataChanged;
+  final VoidCallback? onStepCompleted;
 
   const ProfileStepPhotos({
     super.key,
     required this.profileData,
     required this.onDataChanged,
+    this.onStepCompleted,
   });
 
   @override
-  State<ProfileStepPhotos> createState() => _ProfileStepPhotosState();
+  State<ProfileStepPhotos> createState() => ProfileStepPhotosState();
 }
 
-class _ProfileStepPhotosState extends State<ProfileStepPhotos>
+class ProfileStepPhotosState extends State<ProfileStepPhotos>
     with TickerProviderStateMixin {
   late AnimationController _slideController;
   late List<Animation<Offset>> _photoAnimations;
 
   final int _maxPhotos = 6;
   final List<GlobalKey<_PhotoCardState>> _cardKeys = [];
+  Map<int, double> _uploadProgress = {};
+  Map<int, String> _uploadErrors = {};
 
   @override
   void initState() {
@@ -114,26 +120,78 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
     }
   }
 
+  /// Save all photos to Firebase
+  Future<void> savePhotos() async {
+    // Collect all photo paths
+    final photoPaths = <String>[];
+    for (final key in _cardKeys) {
+      final cardState = key.currentState;
+      if (cardState != null && cardState.hasPhoto && cardState.photoAsFile != null) {
+        final photoPath = cardState.photoAsFile!.path;
+        debugPrint('Adding photo path: $photoPath');
+        debugPrint('File exists: ${await cardState.photoAsFile!.exists()}');
+        photoPaths.add(photoPath);
+      }
+    }
+
+    debugPrint('Total photos to upload: ${photoPaths.length}');
+
+    // Trigger upload via BLoC
+    if (mounted) {
+      context.read<ProfileCreationBloc>().add(
+        SavePhotosRequested(photoPaths: photoPaths),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.screenPaddingHorizontal,
-      ),
-      child: Column(
-        children: [
-          const SizedBox(height: AppDimensions.spacing24),
+    return BlocListener<ProfileCreationBloc, ProfileCreationState>(
+      listener: (context, state) {
+        if (state is PhotoUploadInProgress) {
+          setState(() {
+            _uploadProgress[state.photoIndex] = state.progress;
+            _uploadErrors.remove(state.photoIndex);
+          });
+        } else if (state is PhotoUploadSuccess) {
+          setState(() {
+            _uploadProgress.remove(state.photoIndex);
+            _uploadErrors.remove(state.photoIndex);
+          });
+        } else if (state is PhotoUploadError) {
+          setState(() {
+            _uploadProgress.remove(state.photoIndex);
+            _uploadErrors[state.photoIndex] = state.message;
+          });
+        } else if (state is AllPhotosUploaded) {
+          setState(() {
+            _uploadProgress.clear();
+            _uploadErrors.clear();
+          });
+          widget.onStepCompleted?.call();
+        } else if (state is ProfileCreationStepCompleted && state.stepName == 'photos') {
+          widget.onStepCompleted?.call();
+        }
+      },
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.screenPaddingHorizontal,
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: AppDimensions.spacing24),
 
-          // Photo Grid
-          _buildPhotoGrid(),
+            // Photo Grid
+            _buildPhotoGrid(),
 
-          const SizedBox(height: AppDimensions.spacing32),
+            const SizedBox(height: AppDimensions.spacing32),
 
-          // Upload Instructions
-          _buildInstructions(),
+            // Upload Instructions
+            _buildInstructions(),
 
-          const SizedBox(height: AppDimensions.spacing32),
-        ],
+            const SizedBox(height: AppDimensions.spacing32),
+          ],
+        ),
       ),
     );
   }
@@ -158,6 +216,8 @@ class _ProfileStepPhotosState extends State<ProfileStepPhotos>
             index: index,
             onPhotoChanged: _onPhotoChanged,
             onMakeMain: () => _makeMainPhoto(index),
+            uploadProgress: _uploadProgress[index],
+            uploadError: _uploadErrors[index],
           ),
         );
       },
@@ -242,12 +302,16 @@ class PhotoCard extends StatefulWidget {
   final int index;
   final VoidCallback onPhotoChanged;
   final VoidCallback onMakeMain;
+  final double? uploadProgress;
+  final String? uploadError;
 
   const PhotoCard({
     super.key,
     required this.index,
     required this.onPhotoChanged,
     required this.onMakeMain,
+    this.uploadProgress,
+    this.uploadError,
   });
 
   @override
@@ -261,6 +325,7 @@ class _PhotoCardState extends State<PhotoCard> {
 
   bool get hasPhoto => _photoFile != null;
   XFile? get photoFile => _photoFile;
+  File? get photoAsFile => _photoFile != null ? File(_photoFile!.path) : null;
 
   void setPhoto(XFile? photo) {
     if (mounted) {
@@ -288,6 +353,11 @@ class _PhotoCardState extends State<PhotoCard> {
       );
 
       if (image != null) {
+        // Verify the file exists immediately after selection
+        final file = File(image.path);
+        debugPrint('Selected image path: ${image.path}');
+        debugPrint('File exists immediately after selection: ${await file.exists()}');
+        
         setState(() {
           _photoFile = image;
           _isLoading = false;
@@ -533,25 +603,93 @@ class _PhotoCardState extends State<PhotoCard> {
           ),
         ),
 
-        // Gradient overlay for better button visibility
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withOpacity(0.1),
-                  Colors.transparent,
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.1),
-                ],
-                stops: const [0.0, 0.3, 0.7, 1.0],
+        // Upload Progress Overlay
+        if (widget.uploadProgress != null)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                color: Colors.black.withOpacity(0.7),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: CircularProgressIndicator(
+                        value: widget.uploadProgress,
+                        color: AppColors.white,
+                        strokeWidth: 3,
+                      ),
+                    ),
+                    const SizedBox(height: AppDimensions.spacing8),
+                    Text(
+                      '${(widget.uploadProgress! * 100).toInt()}%',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
+
+        // Upload Error Overlay
+        if (widget.uploadError != null)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                color: AppColors.error.withOpacity(0.9),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: AppColors.white,
+                      size: 32,
+                    ),
+                    const SizedBox(height: AppDimensions.spacing8),
+                    Text(
+                      'Upload Failed',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+        // Gradient overlay for better button visibility
+        if (widget.uploadProgress == null && widget.uploadError == null)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.1),
+                    Colors.transparent,
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.1),
+                  ],
+                  stops: const [0.0, 0.3, 0.7, 1.0],
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }

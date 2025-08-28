@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
-
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../profile/presentation/bloc/profile_creation_bloc.dart';
 
 class ProfileStepFaith extends StatefulWidget {
   final Map<String, dynamic> profileData;
   final Function(String, dynamic) onDataChanged;
+  final VoidCallback? onStepCompleted;
 
   const ProfileStepFaith({
     super.key,
     required this.profileData,
     required this.onDataChanged,
+    this.onStepCompleted,
   });
 
   @override
-  State<ProfileStepFaith> createState() => _ProfileStepFaithState();
+  State<ProfileStepFaith> createState() => ProfileStepFaithState();
 }
 
-class _ProfileStepFaithState extends State<ProfileStepFaith>
+class ProfileStepFaithState extends State<ProfileStepFaith>
     with TickerProviderStateMixin {
   final _bibleVerseController = TextEditingController();
   final _faithStoryController = TextEditingController();
@@ -200,7 +203,13 @@ class _ProfileStepFaithState extends State<ProfileStepFaith>
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    return BlocListener<ProfileCreationBloc, ProfileCreationState>(
+      listener: (context, state) {
+        if (state is ProfileCreationStepCompleted && state.stepName == 'faith') {
+          widget.onStepCompleted?.call();
+        }
+      },
+      child: SingleChildScrollView(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.screenPaddingHorizontal,
       ),
@@ -229,6 +238,7 @@ class _ProfileStepFaithState extends State<ProfileStepFaith>
 
           const SizedBox(height: AppDimensions.spacing32),
         ],
+      ),
       ),
     );
   }
@@ -751,5 +761,32 @@ class _ProfileStepFaithState extends State<ProfileStepFaith>
 
     _bibleVerseController.text = verse;
     _bibleVerseFocusNode.requestFocus();
+  }
+
+  /// Save faith information to database
+  Future<void> saveFaithInfo() async {
+    // Basic validation - at least denomination should be selected
+    if (_selectedDenomination == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select your denomination'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+          ),
+        ),
+      );
+      return;
+    }
+
+    context.read<ProfileCreationBloc>().add(
+      SaveFaithInfoRequested(
+        denomination: _selectedDenomination,
+        churchAttendance: _selectedChurchAttendance,
+        favoriteBibleVerse: _bibleVerseController.text.isNotEmpty ? _bibleVerseController.text : null,
+        faithStory: _faithStoryController.text.isNotEmpty ? _faithStoryController.text : null,
+      ),
+    );
   }
 }

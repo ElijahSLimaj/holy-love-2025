@@ -38,15 +38,20 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
 
   // Profile data
   final Map<String, dynamic> _profileData = {};
+  Map<String, bool> _completedSteps = {};
 
   // Step widget keys
   final GlobalKey<ProfileStepBasicInfoState> _basicInfoKey = GlobalKey();
+  final GlobalKey<ProfileStepPhotosState> _photosKey = GlobalKey();
+  final GlobalKey<ProfileStepFaithState> _faithKey = GlobalKey();
+  final GlobalKey<ProfileStepAboutState> _aboutKey = GlobalKey();
+  final GlobalKey<ProfileStepPreferencesState> _preferencesKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     _setupAnimations();
-    _startAnimations();
+    _loadExistingProfileAndStartAnimations();
   }
 
   void _setupAnimations() {
@@ -90,6 +95,79 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
     ));
   }
 
+  void _loadExistingProfileAndStartAnimations() async {
+    // Load existing profile data to determine starting step
+    final profileRepository = ProfileRepository();
+    final userId = profileRepository.currentUserId;
+    
+    if (userId != null) {
+      try {
+        final existingProfile = await profileRepository.getProfile(userId);
+        if (existingProfile != null) {
+          // Populate profile data from existing profile
+          _profileData.addAll({
+            'firstName': existingProfile.firstName,
+            'lastName': existingProfile.lastName,
+            'age': existingProfile.age,
+            'location': existingProfile.location,
+            'geoLocation': existingProfile.geoLocation,
+            'locationCity': existingProfile.locationCity,
+            'locationState': existingProfile.locationState,
+            'locationCountry': existingProfile.locationCountry,
+          });
+
+          // Store completed steps
+          _completedSteps = Map<String, bool>.from(existingProfile.completedSteps);
+
+          // Load profile details if they exist
+          final profileDetails = await profileRepository.getProfileDetails(userId);
+          if (profileDetails != null) {
+            // Add profile details data to _profileData
+            _profileData.addAll({
+              'denomination': profileDetails.denomination,
+              'churchAttendance': profileDetails.churchAttendance,
+              'favoriteBibleVerse': profileDetails.favoriteBibleVerse,
+              'faithStory': profileDetails.faithStory,
+              'bio': profileDetails.bio,
+              'interests': profileDetails.interests,
+              'relationshipGoal': profileDetails.relationshipGoal,
+              'occupation': profileDetails.occupation,
+              'education': profileDetails.education,
+              'languages': profileDetails.languages,
+              'height': profileDetails.height,
+              'hasChildren': profileDetails.hasChildren,
+              'wantsChildren': profileDetails.wantsChildren,
+              'drinks': profileDetails.drinks,
+              'smokes': profileDetails.smokes,
+              'personalityType': profileDetails.personalityType,
+              'preferences': profileDetails.preferences,
+            });
+          }
+
+          // Determine which step to start from
+          final nextStep = _determineNextStep(existingProfile.completedSteps);
+          if (nextStep > 0) {
+            setState(() {
+              _currentStep = nextStep;
+            });
+            
+            // Jump to the appropriate page
+            _pageController.animateToPage(
+              nextStep,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          }
+        }
+      } catch (e) {
+        // If loading fails, start from beginning
+        debugPrint('Error loading existing profile: $e');
+      }
+    }
+    
+    _startAnimations();
+  }
+
   void _startAnimations() async {
     await Future.delayed(const Duration(milliseconds: 100));
     if (mounted) {
@@ -100,6 +178,23 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
         _updateProgress();
       }
     }
+  }
+
+  /// Determine which step to start from based on completed steps
+  int _determineNextStep(Map<String, bool> completedSteps) {
+    const stepOrder = ['basicInfo', 'photos', 'faith', 'about', 'preferences'];
+    
+    for (int i = 0; i < stepOrder.length; i++) {
+      final stepName = stepOrder[i];
+      final isCompleted = completedSteps[stepName] ?? false;
+      
+      if (!isCompleted) {
+        return i; // Return the index of the first incomplete step
+      }
+    }
+    
+    // All steps completed, go to last step
+    return stepOrder.length - 1;
   }
 
   void _updateProgress() {
@@ -118,11 +213,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => ProfileCreationBloc(
-        profileRepository: ProfileRepository(),
-      ),
-      child: BlocListener<ProfileCreationBloc, ProfileCreationState>(
+    return BlocListener<ProfileCreationBloc, ProfileCreationState>(
         listener: (context, state) {
           if (state is ProfileCreationError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -135,6 +226,31 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
                 ),
               ),
             );
+          } else if (state is ProfileCreationSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: AppColors.success,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                ),
+              ),
+            );
+            // Refresh auth state and navigate after a short delay
+            Future.delayed(const Duration(milliseconds: 500), () async {
+              if (mounted) {
+                // Refresh the auth state to update isNewUser status
+                context.read<AuthBloc>().add(const AuthRefreshUserRequested());
+                
+                // Wait a bit for the auth refresh to complete
+                await Future.delayed(const Duration(milliseconds: 1000));
+                
+                if (mounted) {
+                  _navigateToMainApp();
+                }
+              }
+            });
           }
         },
         child: Scaffold(
@@ -167,7 +283,6 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
             ),
           ),
         ),
-      ),
     );
   }
 
@@ -215,16 +330,37 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
 
             const SizedBox(height: AppDimensions.spacing24),
 
-            // Step title
+            // Step title with completion indicator
             SlideTransition(
               position: _slideAnimation,
-              child: Text(
-                _getStepTitle(),
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_isCurrentStepCompleted())
+                    Container(
+                      margin: const EdgeInsets.only(right: AppDimensions.spacing8),
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: AppColors.success,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        color: AppColors.white,
+                        size: 16,
+                      ),
                     ),
-                textAlign: TextAlign.center,
+                  Flexible(
+                    child: Text(
+                      _getStepTitle(),
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
               ),
             ),
 
@@ -292,20 +428,36 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
               },
             ),
             ProfileStepPhotos(
+              key: _photosKey,
               profileData: _profileData,
               onDataChanged: _updateProfileData,
+              onStepCompleted: () {
+                _moveToNextStepAfterSave();
+              },
             ),
             ProfileStepFaith(
+              key: _faithKey,
               profileData: _profileData,
               onDataChanged: _updateProfileData,
+              onStepCompleted: () {
+                _moveToNextStepAfterSave();
+              },
             ),
             ProfileStepAbout(
+              key: _aboutKey,
               profileData: _profileData,
               onDataChanged: _updateProfileData,
+              onStepCompleted: () {
+                _moveToNextStepAfterSave();
+              },
             ),
             ProfileStepPreferences(
+              key: _preferencesKey,
               profileData: _profileData,
               onDataChanged: _updateProfileData,
+              onStepCompleted: () {
+                _completeProfileCreation();
+              },
             ),
           ],
         ),
@@ -360,6 +512,26 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
       _basicInfoKey.currentState?.saveBasicInfo();
       // The actual navigation will happen via the onStepCompleted callback
       return;
+    } else if (_currentStep == 1) {
+      // Save photos to Firebase Storage
+      _photosKey.currentState?.savePhotos();
+      // The actual navigation will happen via the onStepCompleted callback
+      return;
+    } else if (_currentStep == 2) {
+      // Save faith info to Firestore
+      _faithKey.currentState?.saveFaithInfo();
+      // The actual navigation will happen via the onStepCompleted callback
+      return;
+    } else if (_currentStep == 3) {
+      // Save about info to Firestore
+      _aboutKey.currentState?.saveAboutInfo();
+      // The actual navigation will happen via the onStepCompleted callback
+      return;
+    } else if (_currentStep == 4) {
+      // Save preferences info and complete profile
+      _preferencesKey.currentState?.savePreferencesInfo();
+      // The completion will happen via the onStepCompleted callback
+      return;
     }
 
     if (_currentStep < _totalSteps - 1) {
@@ -390,6 +562,14 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
 
   void _moveToNextStepAfterSave() async {
     if (_currentStep < _totalSteps - 1) {
+      // Mark current step as completed
+      const stepOrder = ['basicInfo', 'photos', 'faith', 'about', 'preferences'];
+      if (_currentStep >= 0 && _currentStep < stepOrder.length) {
+        setState(() {
+          _completedSteps[stepOrder[_currentStep]] = true;
+        });
+      }
+
       // Animate out current step
       await _slideController.reverse();
 
@@ -447,72 +627,24 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
   }
 
   void _completeProfileCreation() async {
-    // Mark profile as complete using the bloc
-    context.read<ProfileCreationBloc>().add(
-          CompleteProfileRequested(
-            allProfileData: _profileData,
-          ),
-        );
-
-    // Show success animation
-    await _showCompletionAnimation();
-
-    if (mounted) {
-      // Refresh the auth user state to reflect profile completion
-      context.read<AuthBloc>().add(const AuthRefreshUserRequested());
-      _navigateToMainApp();
-    }
+    // This method is now handled by the preferences step completion
+    // The BLocListener will handle the ProfileCreationSuccess state
+    debugPrint('Profile creation completed - handled by BLoC listener');
   }
 
-  Future<void> _showCompletionAnimation() async {
-    // TODO: Implement beautiful completion animation
-    HapticFeedback.mediumImpact();
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.check_circle,
-              color: AppColors.success,
-              size: 64,
-            ),
-            const SizedBox(height: AppDimensions.spacing16),
-            Text(
-              'Profile Complete!',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-            ),
-            const SizedBox(height: AppDimensions.spacing8),
-            Text(
-              'Welcome to Holy Love! Let\'s find your perfect match.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                    height: 1.5,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-
-    await Future.delayed(const Duration(seconds: 2));
-    _navigateToMainApp();
-  }
 
   void _navigateToMainApp() {
-    Navigator.of(context).pop(); // Close dialog
+    // Close any open dialogs
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+    
     // Pop to root and let the auth bloc handle navigation
     Navigator.of(context).popUntil((route) => route.isFirst);
+    
+    // The _AppNavigator will automatically route to MainNavigationScreen
+    // since the user's profileComplete is now true
   }
 
   // Helper methods
@@ -531,6 +663,15 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen>
       default:
         return '';
     }
+  }
+
+  bool _isCurrentStepCompleted() {
+    const stepOrder = ['basicInfo', 'photos', 'faith', 'about', 'preferences'];
+    if (_currentStep >= 0 && _currentStep < stepOrder.length) {
+      final stepName = stepOrder[_currentStep];
+      return _completedSteps[stepName] ?? false;
+    }
+    return false;
   }
 
   String _getStepSubtitle() {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
@@ -10,6 +11,9 @@ import '../../../settings/presentation/pages/notification_settings_screen.dart';
 import '../../../settings/presentation/pages/privacy_settings_screen.dart';
 import '../../../settings/presentation/pages/help_support_screen.dart';
 import 'edit_profile_screen.dart';
+import '../../data/repositories/profile_repository.dart';
+import '../../data/models/profile_data.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -28,22 +32,16 @@ class _ProfileScreenState extends State<ProfileScreen>
   late Animation<Offset> _headerSlideAnimation;
   late List<Animation<double>> _cardAnimations;
 
-  // Mock user data - in real app this would come from user state/BLoC
-  final Map<String, dynamic> _currentUser = {
-    'firstName': 'Sarah',
-    'lastName': 'Johnson',
-    'age': 26,
-    'location': 'Austin, TX',
-    'denomination': 'Non-denominational',
-    'occupation': 'Elementary Teacher',
-    'bio':
-        'Elementary school teacher who loves hiking, worship music, and coffee dates. Looking for someone to share life\'s adventures and grow in faith together! 🌟',
-    'favoriteVerse': 'Jeremiah 29:11',
-    'profileCompletion': 85,
+  // User profile data
+  ProfileData? _profileData;
+  ProfileDetailsData? _profileDetails;
+  bool _isLoading = true;
+  
+  // Static data for features not yet implemented
+  final Map<String, dynamic> _staticData = {
     'totalLikes': 127,
     'totalMatches': 23,
     'profileViews': 89,
-    'photoCount': 4,
     'maxPhotos': 6,
     'isVerified': true,
     'isPremium': false,
@@ -53,7 +51,55 @@ class _ProfileScreenState extends State<ProfileScreen>
   void initState() {
     super.initState();
     _setupAnimations();
-    _startAnimations();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final authState = context.read<AuthBloc>().state;
+      if (authState.status == AuthStatus.authenticated) {
+        final userId = authState.user.id;
+        final profileRepository = context.read<ProfileRepository>();
+        
+        // Load profile data
+        final profileData = await profileRepository.getProfile(userId);
+        final profileDetails = await profileRepository.getProfileDetails(userId);
+        
+        // Recalculate completion percentage to fix any profiles with old calculation
+        await profileRepository.recalculateCompletion(userId);
+        
+        // Reload profile data after recalculation
+        final updatedProfileData = await profileRepository.getProfile(userId);
+        
+        if (mounted) {
+          setState(() {
+            _profileData = updatedProfileData ?? profileData;
+            _profileDetails = profileDetails;
+            _isLoading = false;
+          });
+          
+          // Debug logging
+          final finalData = updatedProfileData ?? profileData;
+          debugPrint('Profile loaded: ${finalData?.firstName} ${finalData?.lastName}');
+          debugPrint('Main photo URL: ${finalData?.mainPhotoUrl}');
+          debugPrint('Photo count: ${profileDetails?.photoCount}');
+          debugPrint('Profile completion: ${finalData?.profileCompletionPercentage}%');
+          debugPrint('Profile complete: ${finalData?.profileComplete}');
+          
+          // Start animations after data is loaded
+          _startAnimations();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading user profile: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        // Start animations even if data loading fails
+        _startAnimations();
+      }
+    }
   }
 
   void _setupAnimations() {
@@ -148,22 +194,28 @@ class _ProfileScreenState extends State<ProfileScreen>
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: AnimatedBuilder(
-          animation: _fadeAnimation,
-          builder: (context, child) {
-            return Opacity(
-              opacity: _fadeAnimation.value.clamp(0.0, 1.0),
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  Expanded(
-                    child: _buildContent(),
-                  ),
-                ],
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+              )
+            : AnimatedBuilder(
+                animation: _fadeAnimation,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _fadeAnimation.value.clamp(0.0, 1.0),
+                    child: Column(
+                      children: [
+                        _buildHeader(),
+                        Expanded(
+                          child: _buildContent(),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
-            );
-          },
-        ),
       ),
     );
   }
@@ -219,6 +271,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildProfileAvatar() {
+    final mainPhotoUrl = _profileData?.mainPhotoUrl;
+    
     return Stack(
       children: [
         Container(
@@ -239,13 +293,38 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
             ],
           ),
-          child: const Icon(
-            Icons.person,
-            size: 48,
-            color: AppColors.textSecondary,
+          child: ClipOval(
+            child: mainPhotoUrl != null && mainPhotoUrl.isNotEmpty
+                ? Image.network(
+                    mainPhotoUrl,
+                    width: AppDimensions.avatarXL,
+                    height: AppDimensions.avatarXL,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.person,
+                        size: 48,
+                        color: AppColors.textSecondary,
+                      );
+                    },
+                  )
+                : const Icon(
+                    Icons.person,
+                    size: 48,
+                    color: AppColors.textSecondary,
+                  ),
           ),
         ),
-        if (_currentUser['isVerified'])
+        if ((_profileData?.profileComplete ?? false) && (_staticData['isVerified'] ?? false))
           Positioned(
             bottom: 0,
             right: 0,
@@ -279,6 +358,14 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildProfileInfo() {
+    // Use real data if available, fallback to defaults
+    final firstName = _profileData?.firstName ?? 'User';
+    final lastName = _profileData?.lastName ?? '';
+    final age = _profileData?.age ?? 0;
+    final location = _profileData?.location ?? 'Unknown Location';
+    final occupation = _profileDetails?.occupation ?? 'Not specified';
+    final isPremium = _staticData['isPremium'] ?? false;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -286,14 +373,14 @@ class _ProfileScreenState extends State<ProfileScreen>
           children: [
             Expanded(
               child: Text(
-                '${_currentUser['firstName']} ${_currentUser['lastName']}',
+                lastName.isNotEmpty ? '$firstName $lastName' : firstName,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                     ),
               ),
             ),
-            if (_currentUser['isPremium'])
+            if (isPremium)
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppDimensions.paddingS,
@@ -318,18 +405,20 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
         const SizedBox(height: AppDimensions.spacing4),
         Text(
-          '${_currentUser['age']} • ${_currentUser['location']}',
+          age > 0 ? '$age • $location' : location,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.textSecondary,
               ),
         ),
-        const SizedBox(height: AppDimensions.spacing4),
-        Text(
-          _currentUser['occupation'],
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textTertiary,
-              ),
-        ),
+        if (occupation != 'Not specified') ...[
+          const SizedBox(height: AppDimensions.spacing4),
+          Text(
+            occupation,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textTertiary,
+                ),
+          ),
+        ],
       ],
     );
   }
@@ -379,6 +468,9 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildVerificationBadge() {
+    final isVerified = _staticData['isVerified'] ?? false;
+    final isProfileComplete = _profileData?.profileComplete ?? false;
+    
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.paddingM,
@@ -396,13 +488,13 @@ class _ProfileScreenState extends State<ProfileScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            _currentUser['isVerified'] ? Icons.verified : Icons.pending,
+            isProfileComplete && isVerified ? Icons.verified : Icons.pending,
             color: AppColors.primary,
             size: AppDimensions.iconS,
           ),
           const SizedBox(width: AppDimensions.spacing8),
           Text(
-            _currentUser['isVerified']
+            isProfileComplete && isVerified
                 ? 'Profile Verified'
                 : 'Verification Pending',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -416,9 +508,13 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildContent() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppDimensions.paddingL),
-      child: Column(
+    return RefreshIndicator(
+      onRefresh: _loadUserData,
+      color: AppColors.primary,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(AppDimensions.paddingL),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Profile Stats
@@ -430,9 +526,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                 child: Opacity(
                   opacity: _cardAnimations[0].value.clamp(0.0, 1.0),
                   child: ProfileStatsCard(
-                    likes: _currentUser['totalLikes'],
-                    matches: _currentUser['totalMatches'],
-                    views: _currentUser['profileViews'],
+                    likes: _staticData['totalLikes'],
+                    matches: _staticData['totalMatches'],
+                    views: _staticData['profileViews'],
                   ),
                 ),
               );
@@ -450,9 +546,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                 child: Opacity(
                   opacity: _cardAnimations[1].value.clamp(0.0, 1.0),
                   child: ProfileCompletionCard(
-                    completion: _currentUser['profileCompletion'],
-                    photoCount: _currentUser['photoCount'],
-                    maxPhotos: _currentUser['maxPhotos'],
+                    completion: _profileData?.profileCompletionPercentage ?? 0,
+                    photoCount: _profileDetails?.photoCount ?? 0,
+                    maxPhotos: _staticData['maxPhotos'],
                     onCompleteProfile: () {
                       HapticFeedback.lightImpact();
                       _showComingSoon('Profile completion');
@@ -481,6 +577,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
           const SizedBox(height: AppDimensions.spacing24),
         ],
+        ),
       ),
     );
   }

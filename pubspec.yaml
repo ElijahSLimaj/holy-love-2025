@@ -40,6 +40,10 @@ dependencies:
   permission_handler: ^11.3.1
   geolocator: ^11.1.0
   
+  # Location & Maps
+  mapbox_search: ^4.1.0
+  geocoding: ^3.0.0
+  
   # Storage
   shared_preferences: ^2.3.3
   

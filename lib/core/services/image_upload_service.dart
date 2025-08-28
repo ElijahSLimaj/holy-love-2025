@@ -88,6 +88,7 @@ class ImageUploadService {
         compressedSize: compressedImage.length,
       );
     } catch (e) {
+      debugPrint('ImageUploadService.uploadProfileImage error: $e');
       return null;
     }
   }
@@ -225,6 +226,7 @@ class ImageUploadService {
 
       return downloadUrl;
     } catch (e) {
+      debugPrint('Firebase upload error: $e');
       return null;
     }
   }

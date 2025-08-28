@@ -225,6 +225,11 @@ class ProfileDetailsData {
   // Preferences
   final Map<String, dynamic>? preferences;
 
+  // Photos
+  final List<String>? photoUrls;
+  final List<String>? thumbnailUrls;
+  final int? photoCount;
+
   ProfileDetailsData({
     this.denomination,
     this.churchAttendance,
@@ -243,6 +248,9 @@ class ProfileDetailsData {
     this.smokes,
     this.personalityType,
     this.preferences,
+    this.photoUrls,
+    this.thumbnailUrls,
+    this.photoCount,
   });
 
   Map<String, dynamic> toFirestore() {
@@ -264,6 +272,9 @@ class ProfileDetailsData {
       'smokes': smokes,
       'personalityType': personalityType,
       'preferences': preferences,
+      'photoUrls': photoUrls,
+      'thumbnailUrls': thumbnailUrls,
+      'photoCount': photoCount,
     };
   }
 
@@ -286,6 +297,9 @@ class ProfileDetailsData {
       smokes: data['smokes'],
       personalityType: data['personalityType'],
       preferences: data['preferences'],
+      photoUrls: data['photoUrls'] != null ? List<String>.from(data['photoUrls']) : null,
+      thumbnailUrls: data['thumbnailUrls'] != null ? List<String>.from(data['thumbnailUrls']) : null,
+      photoCount: data['photoCount'],
     );
   }
 }

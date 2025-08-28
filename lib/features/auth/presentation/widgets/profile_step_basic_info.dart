@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../../core/services/location_service.dart';
+import '../../../../shared/widgets/location_search_field.dart';
 import '../../../profile/presentation/bloc/profile_creation_bloc.dart';
 
 class ProfileStepBasicInfo extends StatefulWidget {
@@ -40,6 +43,9 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
   // Form validation
   final _formKey = GlobalKey<FormState>();
   Map<String, String> _fieldErrors = {};
+  
+  // Location data
+  LocationData? _selectedLocation;
 
   @override
   void initState() {
@@ -80,6 +86,20 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
     _lastNameController.text = widget.profileData['lastName'] ?? '';
     _ageController.text = widget.profileData['age']?.toString() ?? '';
     _locationController.text = widget.profileData['location'] ?? '';
+    
+    // Load existing location data if available
+    if (widget.profileData['locationData'] != null) {
+      final locationMap = widget.profileData['locationData'] as Map<String, dynamic>;
+      _selectedLocation = LocationData(
+        latitude: locationMap['latitude'] ?? 0.0,
+        longitude: locationMap['longitude'] ?? 0.0,
+        city: locationMap['city'] ?? '',
+        state: locationMap['state'] ?? '',
+        country: locationMap['country'] ?? '',
+        fullAddress: locationMap['fullAddress'] ?? '',
+        placeId: locationMap['placeId'],
+      );
+    }
   }
 
   void _setupListeners() {
@@ -98,6 +118,10 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
 
     _locationController.addListener(() {
       widget.onDataChanged('location', _locationController.text);
+      // Update location data in profile data
+      if (_selectedLocation != null) {
+        widget.onDataChanged('locationData', _selectedLocation!.toMap());
+      }
     });
 
     // Focus listeners for animations
@@ -247,30 +271,17 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
 
               const SizedBox(height: AppDimensions.spacing20),
 
-              // Location Field
+              // Location Field with Search
               SlideTransition(
                 position: _fieldAnimations[3],
-                child: _buildAnimatedTextField(
+                child: LocationSearchField(
                   controller: _locationController,
                   focusNode: _locationFocusNode,
                   labelText: AppStrings.location,
-                  hintText: 'City, State',
-                  textInputAction: TextInputAction.done,
-                  suffixIcon: IconButton(
-                    onPressed: _detectLocation,
-                    icon: const Icon(
-                      Icons.my_location,
-                      color: AppColors.primary,
-                      size: AppDimensions.iconS,
-                    ),
-                  ),
+                  hintText: 'Search for your city or tap location icon',
                   errorText: _fieldErrors['location'],
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Location is required';
-                    }
-                    return null;
-                  },
+                  onLocationSelected: _onLocationSelected,
+                  onLocationDetected: _onLocationDetected,
                 ),
               ),
 
@@ -407,20 +418,30 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
     );
   }
 
-  void _detectLocation() async {
-    // TODO: Implement location detection
-    HapticFeedback.lightImpact();
+  void _onLocationSelected(LocationData locationData) {
+    setState(() {
+      _selectedLocation = locationData;
+    });
+    
+    // Update profile data
+    widget.onDataChanged('location', locationData.displayLocation);
+    widget.onDataChanged('locationData', locationData.toMap());
+    
+    // Clear location error if any
+    if (_fieldErrors.containsKey('location')) {
+      setState(() {
+        _fieldErrors.remove('location');
+      });
+    }
+  }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Location detection coming soon!'),
-        backgroundColor: AppColors.info,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-        ),
-      ),
-    );
+  void _onLocationDetected() {
+    // Clear location error if any
+    if (_fieldErrors.containsKey('location')) {
+      setState(() {
+        _fieldErrors.remove('location');
+      });
+    }
   }
 
   void _showErrorSnackBar(String message) {
@@ -445,11 +466,29 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
       return;
     }
 
-    // Extract location components if available
-    final locationParts =
-        _locationController.text.split(',').map((e) => e.trim()).toList();
-    final locationCity = locationParts.isNotEmpty ? locationParts[0] : null;
-    final locationState = locationParts.length > 1 ? locationParts[1] : null;
+    // Use selected location data if available, otherwise parse from text
+    String locationCity;
+    String locationState;
+    String locationCountry;
+    GeoPoint? geoLocation;
+
+    if (_selectedLocation != null) {
+      locationCity = _selectedLocation!.city;
+      locationState = _selectedLocation!.state;
+      locationCountry = _selectedLocation!.country;
+      geoLocation = GeoPoint(
+        _selectedLocation!.latitude,
+        _selectedLocation!.longitude,
+      );
+    } else {
+      // Fallback: parse from text input
+      final locationParts =
+          _locationController.text.split(',').map((e) => e.trim()).toList();
+      locationCity = locationParts.isNotEmpty ? locationParts[0] : '';
+      locationState = locationParts.length > 1 ? locationParts[1] : '';
+      locationCountry = locationParts.length > 2 ? locationParts[2] : '';
+      geoLocation = null;
+    }
 
     // Save to Firestore via bloc
     context.read<ProfileCreationBloc>().add(
@@ -458,8 +497,10 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
             lastName: _lastNameController.text.trim(),
             age: int.parse(_ageController.text),
             location: _locationController.text.trim(),
-            locationCity: locationCity,
-            locationState: locationState,
+            geoLocation: geoLocation,
+            locationCity: locationCity.isNotEmpty ? locationCity : null,
+            locationState: locationState.isNotEmpty ? locationState : null,
+            locationCountry: locationCountry.isNotEmpty ? locationCountry : null,
           ),
         );
   }

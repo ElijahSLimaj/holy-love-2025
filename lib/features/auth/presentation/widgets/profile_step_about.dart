@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
-
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../profile/presentation/bloc/profile_creation_bloc.dart';
 
 class ProfileStepAbout extends StatefulWidget {
   final Map<String, dynamic> profileData;
   final Function(String, dynamic) onDataChanged;
+  final VoidCallback? onStepCompleted;
 
   const ProfileStepAbout({
     super.key,
     required this.profileData,
     required this.onDataChanged,
+    this.onStepCompleted,
   });
 
   @override
-  State<ProfileStepAbout> createState() => _ProfileStepAboutState();
+  State<ProfileStepAbout> createState() => ProfileStepAboutState();
 }
 
-class _ProfileStepAboutState extends State<ProfileStepAbout>
+class ProfileStepAboutState extends State<ProfileStepAbout>
     with TickerProviderStateMixin {
   final _bioController = TextEditingController();
   final _bioFocusNode = FocusNode();
@@ -208,7 +211,13 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    return BlocListener<ProfileCreationBloc, ProfileCreationState>(
+      listener: (context, state) {
+        if (state is ProfileCreationStepCompleted && state.stepName == 'about') {
+          widget.onStepCompleted?.call();
+        }
+      },
+      child: SingleChildScrollView(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.screenPaddingHorizontal,
       ),
@@ -232,6 +241,7 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
 
           const SizedBox(height: AppDimensions.spacing32),
         ],
+      ),
       ),
     );
   }
@@ -697,5 +707,48 @@ class _ProfileStepAboutState extends State<ProfileStepAbout>
     });
 
     widget.onDataChanged('relationshipGoal', goalId);
+  }
+
+  /// Save about information to database
+  Future<void> saveAboutInfo() async {
+    // Basic validation - at least one interest should be selected
+    if (_selectedInterests.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select at least one interest'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Validate bio length
+    if (_bioController.text.length > 500) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Bio must be less than 500 characters'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (mounted) {
+      context.read<ProfileCreationBloc>().add(
+        SaveAboutInfoRequested(
+          bio: _bioController.text.isNotEmpty ? _bioController.text : null,
+          interests: _selectedInterests,
+          relationshipGoal: _selectedRelationshipGoal,
+        ),
+      );
+    }
   }
 }

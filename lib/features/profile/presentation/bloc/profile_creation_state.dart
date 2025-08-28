@@ -51,3 +51,70 @@ class ProfileCreationValidationError extends ProfileCreationState {
 }
 
 class ProfileCreationCompleted extends ProfileCreationState {}
+
+class PhotoUploadInProgress extends ProfileCreationState {
+  final int photoIndex;
+  final double progress;
+
+  const PhotoUploadInProgress({
+    required this.photoIndex,
+    required this.progress,
+  });
+
+  @override
+  List<Object?> get props => [photoIndex, progress];
+}
+
+class PhotoUploadSuccess extends ProfileCreationState {
+  final int photoIndex;
+  final String photoUrl;
+  final String thumbnailUrl;
+
+  const PhotoUploadSuccess({
+    required this.photoIndex,
+    required this.photoUrl,
+    required this.thumbnailUrl,
+  });
+
+  @override
+  List<Object?> get props => [photoIndex, photoUrl, thumbnailUrl];
+}
+
+class PhotoUploadError extends ProfileCreationState {
+  final int photoIndex;
+  final String message;
+
+  const PhotoUploadError({
+    required this.photoIndex,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props => [photoIndex, message];
+}
+
+class AllPhotosUploaded extends ProfileCreationState {
+  final List<String> photoUrls;
+  final String? mainPhotoUrl;
+  final String? mainThumbnailUrl;
+
+  const AllPhotosUploaded({
+    required this.photoUrls,
+    this.mainPhotoUrl,
+    this.mainThumbnailUrl,
+  });
+
+  @override
+  List<Object?> get props => [photoUrls, mainPhotoUrl, mainThumbnailUrl];
+}
+
+class ProfileCreationSuccess extends ProfileCreationState {
+  final String message;
+
+  const ProfileCreationSuccess({
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props => [message];
+}

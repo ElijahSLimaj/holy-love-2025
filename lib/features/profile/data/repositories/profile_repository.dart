@@ -2,7 +2,9 @@ import 'dart:async';
 // removed unused import
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import '../models/profile_data.dart';
+import '../../../../core/services/image_upload_service.dart';
 
 /// Repository for managing user profiles with optimized Firestore operations
 class ProfileRepository {
@@ -73,7 +75,8 @@ class ProfileRepository {
         updatedAt: now,
         completedSteps: {...existingData.completedSteps, 'basicInfo': true},
         profileCompletionPercentage: _calculateCompletionPercentage(
-          {...existingData.completedSteps, 'basicInfo': true},
+          completedSteps: {...existingData.completedSteps, 'basicInfo': true},
+          photoCount: 0, // Will be updated when photos are uploaded
         ),
       );
 
@@ -94,7 +97,10 @@ class ProfileRepository {
         createdAt: now,
         updatedAt: now,
         profileComplete: false,
-        profileCompletionPercentage: 20, // Basic info is 20%
+        profileCompletionPercentage: _calculateCompletionPercentage(
+          completedSteps: {'basicInfo': true},
+          photoCount: 0,
+        ),
         completedSteps: {'basicInfo': true},
         searchName: '${firstName.toLowerCase()} ${lastName.toLowerCase()}',
         searchKeywords:
@@ -271,27 +277,7 @@ class ProfileRepository {
     }
   }
 
-  /// Calculate profile completion percentage
-  int _calculateCompletionPercentage(Map<String, bool> completedSteps) {
-    const stepWeights = {
-      'basicInfo': 20,
-      'photos': 20,
-      'faith': 20,
-      'about': 20,
-      'preferences': 20,
-    };
 
-    int totalPercentage = 0;
-    completedSteps.forEach((step, completed) {
-      if (completed && stepWeights.containsKey(step)) {
-        final weight = stepWeights[step]!;
-        totalPercentage += weight;
-      } else if (completed) {
-      } else {}
-    });
-
-    return totalPercentage;
-  }
 
   /// Cache management methods
   bool _isProfileCached(String userId) {
@@ -379,6 +365,431 @@ class ProfileRepository {
       isValid: isValid,
       errors: errors,
     );
+  }
+
+  /// Save photo URLs to user profile
+  Future<void> savePhotos({
+    required String userId,
+    required List<String> photoUrls,
+    required List<String> thumbnailUrls,
+    String? mainPhotoUrl,
+    String? mainThumbnailUrl,
+  }) async {
+    try {
+      final batch = _firestore.batch();
+
+      // Get current profile to calculate completion
+      final profileDoc = await _firestore.collection(_usersCollection).doc(userId).get();
+      final currentData = profileDoc.data() ?? {};
+      final currentSteps = Map<String, bool>.from(currentData['completedSteps'] ?? {});
+      currentSteps['photos'] = true;
+      
+      final newCompletionPercentage = _calculateCompletionPercentage(
+        completedSteps: currentSteps,
+        photoCount: photoUrls.length,
+      );
+
+      // Update main profile with main photo URLs
+      final profileRef = _firestore.collection(_usersCollection).doc(userId);
+      final profileUpdates = {
+        'mainPhotoUrl': mainPhotoUrl,
+        'mainPhotoThumbnailUrl': mainThumbnailUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'completedSteps.photos': true,
+        'profileCompletionPercentage': newCompletionPercentage,
+      };
+      batch.update(profileRef, profileUpdates);
+
+      // Save all photo URLs to profile details
+      final detailsRef = _firestore
+          .collection(_usersCollection)
+          .doc(userId)
+          .collection(_profileDetailsCollection)
+          .doc('details');
+      
+      final detailsUpdates = {
+        'photoUrls': photoUrls,
+        'thumbnailUrls': thumbnailUrls,
+        'photoCount': photoUrls.length,
+        'lastPhotoUpdate': FieldValue.serverTimestamp(),
+      };
+      batch.update(detailsRef, detailsUpdates);
+
+      // Update search index with main photo
+      final searchIndexRef = _firestore.collection('searchIndex').doc(userId);
+      final searchUpdates = {
+        'mainPhotoUrl': mainPhotoUrl,
+        'hasPhotos': photoUrls.isNotEmpty,
+        'photoCount': photoUrls.length,
+      };
+      batch.update(searchIndexRef, searchUpdates);
+
+      await batch.commit();
+
+      // Clear cache
+      _clearUserCache(userId);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Save faith information to profile details
+  Future<void> saveFaithInfo({
+    required String userId,
+    String? denomination,
+    String? churchAttendance,
+    String? favoriteBibleVerse,
+    String? faithStory,
+  }) async {
+    try {
+      final batch = _firestore.batch();
+
+      // Get current profile to calculate completion
+      final profileDoc = await _firestore.collection(_usersCollection).doc(userId).get();
+      final currentData = profileDoc.data() ?? {};
+      final currentSteps = Map<String, bool>.from(currentData['completedSteps'] ?? {});
+      currentSteps['faith'] = true;
+      
+      // Get current photo count for completion calculation
+      final detailsDoc = await _firestore
+          .collection(_usersCollection)
+          .doc(userId)
+          .collection(_profileDetailsCollection)
+          .doc('details')
+          .get();
+      final photoCount = detailsDoc.data()?['photoCount'] ?? 0;
+      
+      final newCompletionPercentage = _calculateCompletionPercentage(
+        completedSteps: currentSteps,
+        photoCount: photoCount,
+      );
+
+      // Update main profile completion status
+      final profileRef = _firestore.collection(_usersCollection).doc(userId);
+      final profileUpdates = {
+        'updatedAt': FieldValue.serverTimestamp(),
+        'completedSteps.faith': true,
+        'profileCompletionPercentage': newCompletionPercentage,
+      };
+      batch.update(profileRef, profileUpdates);
+
+      // Save faith info to profile details
+      final detailsRef = _firestore
+          .collection(_usersCollection)
+          .doc(userId)
+          .collection(_profileDetailsCollection)
+          .doc('details');
+      
+      final detailsUpdates = {
+        'denomination': denomination,
+        'churchAttendance': churchAttendance,
+        'favoriteBibleVerse': favoriteBibleVerse,
+        'faithStory': faithStory,
+        'lastFaithUpdate': FieldValue.serverTimestamp(),
+      };
+      batch.update(detailsRef, detailsUpdates);
+
+      // Update search index with faith info for matching
+      final searchIndexRef = _firestore.collection('searchIndex').doc(userId);
+      final searchUpdates = {
+        'denomination': denomination,
+        'churchAttendance': churchAttendance,
+        'hasFaithInfo': denomination != null || churchAttendance != null,
+      };
+      batch.update(searchIndexRef, searchUpdates);
+
+      await batch.commit();
+
+      // Clear cache
+      _clearUserCache(userId);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Save about information to profile details
+  Future<void> saveAboutInfo({
+    required String userId,
+    String? bio,
+    required List<String> interests,
+    String? relationshipGoal,
+  }) async {
+    try {
+      final batch = _firestore.batch();
+
+      // Get current profile to calculate completion
+      final profileDoc = await _firestore.collection(_usersCollection).doc(userId).get();
+      final currentData = profileDoc.data() ?? {};
+      final currentSteps = Map<String, bool>.from(currentData['completedSteps'] ?? {});
+      currentSteps['about'] = true;
+      
+      // Get current photo count for completion calculation
+      final detailsDoc = await _firestore
+          .collection(_usersCollection)
+          .doc(userId)
+          .collection(_profileDetailsCollection)
+          .doc('details')
+          .get();
+      final photoCount = detailsDoc.data()?['photoCount'] ?? 0;
+      
+      final newCompletionPercentage = _calculateCompletionPercentage(
+        completedSteps: currentSteps,
+        photoCount: photoCount,
+      );
+
+      // Update main profile completion status
+      final profileRef = _firestore.collection(_usersCollection).doc(userId);
+      final profileUpdates = {
+        'updatedAt': FieldValue.serverTimestamp(),
+        'completedSteps.about': true,
+        'profileCompletionPercentage': newCompletionPercentage,
+      };
+      batch.update(profileRef, profileUpdates);
+
+      // Save about info to profile details
+      final detailsRef = _firestore
+          .collection(_usersCollection)
+          .doc(userId)
+          .collection(_profileDetailsCollection)
+          .doc('details');
+      
+      final detailsUpdates = {
+        'bio': bio,
+        'interests': interests,
+        'relationshipGoal': relationshipGoal,
+        'lastAboutUpdate': FieldValue.serverTimestamp(),
+      };
+      batch.update(detailsRef, detailsUpdates);
+
+      // Update search index with about info for matching
+      final searchIndexRef = _firestore.collection('searchIndex').doc(userId);
+      final searchUpdates = {
+        'interests': interests,
+        'relationshipGoal': relationshipGoal,
+        'hasAboutInfo': bio != null && bio.isNotEmpty,
+        'interestCount': interests.length,
+      };
+      batch.update(searchIndexRef, searchUpdates);
+
+      await batch.commit();
+
+      // Clear cache
+      _clearUserCache(userId);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Save preferences information to profile details
+  Future<void> savePreferencesInfo({
+    required String userId,
+    required int ageRangeMin,
+    required int ageRangeMax,
+    required int maxDistance,
+    String? faithImportance,
+    required List<String> dealBreakers,
+  }) async {
+    try {
+      final batch = _firestore.batch();
+
+      // Get current profile to calculate completion
+      final profileDoc = await _firestore.collection(_usersCollection).doc(userId).get();
+      final currentData = profileDoc.data() ?? {};
+      final currentSteps = Map<String, bool>.from(currentData['completedSteps'] ?? {});
+      currentSteps['preferences'] = true;
+      
+      // Get current photo count for completion calculation
+      final detailsDoc = await _firestore
+          .collection(_usersCollection)
+          .doc(userId)
+          .collection(_profileDetailsCollection)
+          .doc('details')
+          .get();
+      final photoCount = detailsDoc.data()?['photoCount'] ?? 0;
+      
+      final newCompletionPercentage = _calculateCompletionPercentage(
+        completedSteps: currentSteps,
+        photoCount: photoCount,
+      );
+
+      // Update main profile completion status
+      final profileRef = _firestore.collection(_usersCollection).doc(userId);
+      final profileUpdates = {
+        'updatedAt': FieldValue.serverTimestamp(),
+        'completedSteps.preferences': true,
+        'profileComplete': newCompletionPercentage >= 90, // Consider complete at 90%+
+        'profileCompletionPercentage': newCompletionPercentage,
+      };
+      batch.update(profileRef, profileUpdates);
+
+      // Save preferences to profile details
+      final detailsRef = _firestore
+          .collection(_usersCollection)
+          .doc(userId)
+          .collection(_profileDetailsCollection)
+          .doc('details');
+      
+      final preferencesData = {
+        'ageRangeMin': ageRangeMin,
+        'ageRangeMax': ageRangeMax,
+        'maxDistance': maxDistance,
+        'faithImportance': faithImportance,
+        'dealBreakers': dealBreakers,
+      };
+      
+      final detailsUpdates = {
+        'preferences': preferencesData,
+        'lastPreferencesUpdate': FieldValue.serverTimestamp(),
+      };
+      batch.update(detailsRef, detailsUpdates);
+
+      // Update search index with preferences for matching
+      final searchIndexRef = _firestore.collection('searchIndex').doc(userId);
+      final searchUpdates = {
+        'ageRangeMin': ageRangeMin,
+        'ageRangeMax': ageRangeMax,
+        'maxDistance': maxDistance,
+        'faithImportance': faithImportance,
+        'dealBreakers': dealBreakers,
+        'profileComplete': true,
+      };
+      batch.update(searchIndexRef, searchUpdates);
+
+      await batch.commit();
+
+      // Clear cache
+      _clearUserCache(userId);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Calculate profile completion percentage based on completed steps and photo count
+  int _calculateCompletionPercentage({
+    required Map<String, bool> completedSteps,
+    int photoCount = 0,
+  }) {
+    int percentage = 0;
+    
+    // Basic Info: 20% (required)
+    if (completedSteps['basicInfo'] == true) {
+      percentage += 20;
+    }
+    
+    // Photos: 20% base + 10% bonus for 6 photos (30% max)
+    if (completedSteps['photos'] == true) {
+      percentage += 20; // Base for having any photos
+      if (photoCount >= 6) {
+        percentage += 10; // Bonus for having all 6 photos
+      }
+    }
+    
+    // Faith: 20% (required)
+    if (completedSteps['faith'] == true) {
+      percentage += 20;
+    }
+    
+    // About: 20% (required)  
+    if (completedSteps['about'] == true) {
+      percentage += 20;
+    }
+    
+    // Preferences: 10% (required)
+    if (completedSteps['preferences'] == true) {
+      percentage += 10;
+    }
+    
+    return percentage.clamp(0, 100);
+  }
+
+  /// Recalculate and update profile completion percentage for existing user
+  Future<void> recalculateCompletion(String userId) async {
+    try {
+      final batch = _firestore.batch();
+      
+      // Get current profile data
+      final profileDoc = await _firestore.collection(_usersCollection).doc(userId).get();
+      if (!profileDoc.exists) return;
+      
+      final currentData = profileDoc.data()!;
+      final currentSteps = Map<String, bool>.from(currentData['completedSteps'] ?? {});
+      
+      // Get photo count
+      final detailsDoc = await _firestore
+          .collection(_usersCollection)
+          .doc(userId)
+          .collection(_profileDetailsCollection)
+          .doc('details')
+          .get();
+      final photoCount = detailsDoc.data()?['photoCount'] ?? 0;
+      
+      final newCompletionPercentage = _calculateCompletionPercentage(
+        completedSteps: currentSteps,
+        photoCount: photoCount,
+      );
+      
+      // Update profile with recalculated percentage
+      final profileRef = _firestore.collection(_usersCollection).doc(userId);
+      final updates = {
+        'profileCompletionPercentage': newCompletionPercentage,
+        'profileComplete': newCompletionPercentage >= 90,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      batch.update(profileRef, updates);
+      
+      await batch.commit();
+      _clearUserCache(userId);
+    } catch (e) {
+      debugPrint('Error recalculating completion: $e');
+    }
+  }
+
+  /// Delete a photo from user's profile
+  Future<void> deletePhoto({
+    required String userId,
+    required String photoUrl,
+    required int photoIndex,
+  }) async {
+    try {
+      // Delete from Firebase Storage
+      await ImageUploadService.deleteImage(photoUrl);
+
+      // Get current profile data
+      final profile = await getProfile(userId);
+      final details = await getProfileDetails(userId);
+      
+      if (profile == null || details == null) return;
+
+      // Update photo arrays
+      final photoUrls = List<String>.from(details.photoUrls ?? []);
+      final thumbnailUrls = List<String>.from(details.thumbnailUrls ?? []);
+      
+      if (photoIndex < photoUrls.length) {
+        photoUrls.removeAt(photoIndex);
+      }
+      if (photoIndex < thumbnailUrls.length) {
+        thumbnailUrls.removeAt(photoIndex);
+      }
+
+      // Determine new main photo
+      String? newMainPhoto;
+      String? newMainThumbnail;
+      if (photoUrls.isNotEmpty) {
+        newMainPhoto = photoUrls.first;
+        newMainThumbnail = thumbnailUrls.isNotEmpty ? thumbnailUrls.first : null;
+      }
+
+      // Save updated photo arrays
+      await savePhotos(
+        userId: userId,
+        photoUrls: photoUrls,
+        thumbnailUrls: thumbnailUrls,
+        mainPhotoUrl: newMainPhoto,
+        mainThumbnailUrl: newMainThumbnail,
+      );
+    } catch (e) {
+      rethrow;
+    }
   }
 }
 
