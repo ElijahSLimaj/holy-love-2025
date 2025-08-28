@@ -17,13 +17,13 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   late AnimationController _slideController;
   late AnimationController _fadeController;
   late AnimationController _sectionController;
-  
+
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _sectionFadeAnimation;
-  
+
   late ScrollController _scrollController;
-  
+
   // Form controllers
   final _bioController = TextEditingController();
   final _occupationController = TextEditingController();
@@ -31,7 +31,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   final _heightController = TextEditingController();
   final _favoriteVerseController = TextEditingController();
   final _faithStoryController = TextEditingController();
-  
+
   // Form data
   List<String> _selectedInterests = [];
   String _selectedDenomination = '';
@@ -42,29 +42,64 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   bool _drinks = false;
   bool _smokes = false;
   List<String> _selectedLanguages = [];
-  
+
   // Options
   final List<String> _denominationOptions = [
-    'Catholic', 'Protestant', 'Orthodox', 'Baptist', 'Methodist', 
-    'Presbyterian', 'Lutheran', 'Pentecostal', 'Anglican', 'Non-denominational'
+    'Catholic',
+    'Protestant',
+    'Orthodox',
+    'Baptist',
+    'Methodist',
+    'Presbyterian',
+    'Lutheran',
+    'Pentecostal',
+    'Anglican',
+    'Non-denominational'
   ];
-  
+
   final List<String> _churchAttendanceOptions = [
-    'Weekly', 'Monthly', 'Occasionally', 'Holidays only', 'Rarely'
+    'Weekly',
+    'Monthly',
+    'Occasionally',
+    'Holidays only',
+    'Rarely'
   ];
-  
+
   final List<String> _interestOptions = [
-    'Reading', 'Traveling', 'Cooking', 'Music', 'Sports', 'Art', 'Photography',
-    'Hiking', 'Dancing', 'Volunteering', 'Bible Study', 'Prayer', 'Worship'
+    'Reading',
+    'Traveling',
+    'Cooking',
+    'Music',
+    'Sports',
+    'Art',
+    'Photography',
+    'Hiking',
+    'Dancing',
+    'Volunteering',
+    'Bible Study',
+    'Prayer',
+    'Worship'
   ];
-  
+
   final List<String> _languageOptions = [
-    'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese',
-    'Chinese', 'Japanese', 'Korean', 'Arabic', 'Other'
+    'English',
+    'Spanish',
+    'French',
+    'German',
+    'Italian',
+    'Portuguese',
+    'Chinese',
+    'Japanese',
+    'Korean',
+    'Arabic',
+    'Other'
   ];
-  
+
   final List<String> _relationshipGoalOptions = [
-    'Marriage', 'Long-term relationship', 'Friendship first', 'Casual dating'
+    'Marriage',
+    'Long-term relationship',
+    'Friendship first',
+    'Casual dating'
   ];
 
   @override
@@ -81,12 +116,12 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _sectionController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
@@ -130,14 +165,14 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   void _loadCurrentProfile() {
     // Load current user profile data - in real app this would come from state management
     final currentProfile = MockUsers.sampleProfiles.first;
-    
+
     _bioController.text = currentProfile.bio;
     _occupationController.text = currentProfile.occupation;
     _educationController.text = currentProfile.education;
     _heightController.text = currentProfile.height;
     _favoriteVerseController.text = currentProfile.favoriteVerse;
     _faithStoryController.text = currentProfile.faithStory;
-    
+
     _selectedInterests = List.from(currentProfile.interests);
     _selectedDenomination = currentProfile.denomination;
     _selectedChurchAttendance = currentProfile.churchAttendance;
@@ -151,7 +186,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
   void _saveProfile() {
     HapticFeedback.mediumImpact();
-    
+
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -164,7 +199,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
         duration: const Duration(seconds: 2),
       ),
     );
-    
+
     // Navigate back
     Navigator.of(context).pop();
   }
@@ -282,21 +317,22 @@ class _EditProfileScreenState extends State<EditProfileScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ShaderMask(
-                  shaderCallback: (bounds) => AppColors.loveGradient.createShader(bounds),
+                  shaderCallback: (bounds) =>
+                      AppColors.loveGradient.createShader(bounds),
                   child: Text(
                     'Edit Profile',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.white,
-                    ),
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.white,
+                        ),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Update your information',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                        color: AppColors.textSecondary,
+                      ),
                 ),
               ],
             ),
@@ -331,7 +367,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                     padding: const EdgeInsets.all(AppDimensions.spacing12),
                     decoration: BoxDecoration(
                       gradient: AppColors.loveGradient,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusS),
                     ),
                     child: const Icon(
                       Icons.add_a_photo,
@@ -343,9 +380,9 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                   Text(
                     'Add Photos',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                 ],
               ),
@@ -355,8 +392,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
           Text(
             'Add up to 6 photos to showcase your personality',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-            ),
+                  color: AppColors.textSecondary,
+                ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -421,8 +458,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
             child: Text(
               '${_bioController.text.length}/500',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
-              ),
+                    color: AppColors.textSecondary,
+                  ),
             ),
           ),
         ],
@@ -485,8 +522,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
           Text(
             'Select your interests (up to 10)',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-            ),
+                  color: AppColors.textSecondary,
+                ),
           ),
           const SizedBox(height: AppDimensions.spacing16),
           Wrap(
@@ -513,19 +550,25 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                   ),
                   decoration: BoxDecoration(
                     gradient: isSelected ? AppColors.loveGradient : null,
-                    color: isSelected ? null : AppColors.lightGray.withOpacity(0.5),
+                    color: isSelected
+                        ? null
+                        : AppColors.lightGray.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(AppDimensions.radiusM),
                     border: Border.all(
-                      color: isSelected ? Colors.transparent : AppColors.lightGray,
+                      color:
+                          isSelected ? Colors.transparent : AppColors.lightGray,
                       width: 1,
                     ),
                   ),
                   child: Text(
                     interest,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isSelected ? AppColors.white : AppColors.textPrimary,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    ),
+                          color: isSelected
+                              ? AppColors.white
+                              : AppColors.textPrimary,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w500,
+                        ),
                   ),
                 ),
               );
@@ -593,8 +636,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
           Text(
             'Languages you speak',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-            ),
+                  color: AppColors.textSecondary,
+                ),
           ),
           const SizedBox(height: AppDimensions.spacing16),
           Wrap(
@@ -621,19 +664,25 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                   ),
                   decoration: BoxDecoration(
                     gradient: isSelected ? AppColors.loveGradient : null,
-                    color: isSelected ? null : AppColors.lightGray.withOpacity(0.5),
+                    color: isSelected
+                        ? null
+                        : AppColors.lightGray.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(AppDimensions.radiusM),
                     border: Border.all(
-                      color: isSelected ? Colors.transparent : AppColors.lightGray,
+                      color:
+                          isSelected ? Colors.transparent : AppColors.lightGray,
                       width: 1,
                     ),
                   ),
                   child: Text(
                     language,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isSelected ? AppColors.white : AppColors.textPrimary,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    ),
+                          color: isSelected
+                              ? AppColors.white
+                              : AppColors.textPrimary,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w500,
+                        ),
                   ),
                 ),
               );
@@ -684,9 +733,9 @@ class _EditProfileScreenState extends State<EditProfileScreen>
               Text(
                 title,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
               ),
             ],
           ),
@@ -709,9 +758,9 @@ class _EditProfileScreenState extends State<EditProfileScreen>
         Text(
           label,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
-          ),
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              ),
         ),
         const SizedBox(height: AppDimensions.spacing8),
         TextFormField(
@@ -726,8 +775,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-            ),
+                  color: AppColors.textSecondary,
+                ),
             filled: true,
             fillColor: AppColors.lightGray.withOpacity(0.3),
             border: OutlineInputBorder(
@@ -758,13 +807,14 @@ class _EditProfileScreenState extends State<EditProfileScreen>
         Text(
           label,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
-          ),
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              ),
         ),
         const SizedBox(height: AppDimensions.spacing8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingM),
+          padding:
+              const EdgeInsets.symmetric(horizontal: AppDimensions.paddingM),
           decoration: BoxDecoration(
             color: AppColors.lightGray.withOpacity(0.3),
             borderRadius: BorderRadius.circular(AppDimensions.radiusM),
@@ -775,19 +825,20 @@ class _EditProfileScreenState extends State<EditProfileScreen>
               hint: Text(
                 'Select $label',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+                      color: AppColors.textSecondary,
+                    ),
               ),
               isExpanded: true,
-              icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary),
+              icon: const Icon(Icons.keyboard_arrow_down,
+                  color: AppColors.textSecondary),
               items: options.map((option) {
                 return DropdownMenuItem<String>(
                   value: option,
                   child: Text(
                     option,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
+                          color: AppColors.textPrimary,
+                        ),
                   ),
                 );
               }).toList(),
@@ -812,9 +863,9 @@ class _EditProfileScreenState extends State<EditProfileScreen>
           Text(
             title,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
+                ),
           ),
           Switch(
             value: value,

@@ -9,6 +9,7 @@ enum ButtonVariant {
   outline,
   text,
   gradient,
+  socialGradientBorder,
 }
 
 enum ButtonSize {
@@ -44,7 +45,7 @@ class CustomButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return SizedBox(
       width: isFullWidth ? double.infinity : customWidth,
       height: _getButtonHeight(),
@@ -64,6 +65,8 @@ class CustomButton extends StatelessWidget {
         return _buildTextButton(theme);
       case ButtonVariant.gradient:
         return _buildGradientButton(theme);
+      case ButtonVariant.socialGradientBorder:
+        return _buildSocialGradientBorderButton(theme);
     }
   }
 
@@ -72,7 +75,7 @@ class CustomButton extends StatelessWidget {
     if (customColor == null) {
       return _buildGradientButton(theme);
     }
-    
+
     // Fallback to solid color when custom color is provided
     return ElevatedButton(
       onPressed: isLoading ? null : onPressed,
@@ -164,6 +167,37 @@ class CustomButton extends StatelessWidget {
     );
   }
 
+  Widget _buildSocialGradientBorderButton(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppColors.loveGradient,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+      ),
+      child: Container(
+        margin: const EdgeInsets.all(1.5), // Border width
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusM - 1.5),
+        ),
+        child: ElevatedButton(
+          onPressed: isLoading ? null : onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            foregroundColor: AppColors.textPrimary,
+            elevation: 0,
+            shadowColor: Colors.transparent,
+            padding: _getButtonPadding(),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusM - 1.5),
+            ),
+            textStyle: _getTextStyle(),
+          ),
+          child: _buildButtonContent(),
+        ),
+      ),
+    );
+  }
+
   Widget _buildButtonContent() {
     if (isLoading) {
       return SizedBox(
@@ -224,7 +258,7 @@ class CustomButton extends StatelessWidget {
 
   TextStyle _getTextStyle() {
     final baseFontSize = size == ButtonSize.small ? 14.0 : 16.0;
-    
+
     return TextStyle(
       fontSize: baseFontSize,
       fontWeight: FontWeight.w600,
@@ -337,4 +371,4 @@ extension CustomButtonExtensions on CustomButton {
       customWidth: customWidth,
     );
   }
-} 
+}

@@ -60,8 +60,10 @@ class FilterCriteria {
       ageRange: ageRange ?? this.ageRange,
       maxDistance: maxDistance ?? this.maxDistance,
       heightRange: heightRange ?? this.heightRange,
-      selectedDenominations: selectedDenominations ?? this.selectedDenominations,
-      selectedChurchAttendance: selectedChurchAttendance ?? this.selectedChurchAttendance,
+      selectedDenominations:
+          selectedDenominations ?? this.selectedDenominations,
+      selectedChurchAttendance:
+          selectedChurchAttendance ?? this.selectedChurchAttendance,
       selectedInterests: selectedInterests ?? this.selectedInterests,
       selectedEducation: selectedEducation ?? this.selectedEducation,
       selectedOccupations: selectedOccupations ?? this.selectedOccupations,
@@ -71,7 +73,8 @@ class FilterCriteria {
       drinks: drinks ?? this.drinks,
       smokes: smokes ?? this.smokes,
       onlineOnly: onlineOnly ?? this.onlineOnly,
-      selectedRelationshipGoals: selectedRelationshipGoals ?? this.selectedRelationshipGoals,
+      selectedRelationshipGoals:
+          selectedRelationshipGoals ?? this.selectedRelationshipGoals,
     );
   }
 }
@@ -93,45 +96,94 @@ class _DiscoveryFiltersScreenState extends State<DiscoveryFiltersScreen>
   late AnimationController _slideController;
   late AnimationController _fadeController;
   late AnimationController _sectionController;
-  
+
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _sectionFadeAnimation;
-  
+
   late ScrollController _scrollController;
   late FilterCriteria _filters;
 
   // Filter options
   final List<String> _denominationOptions = [
-    'Catholic', 'Protestant', 'Orthodox', 'Baptist', 'Methodist', 
-    'Presbyterian', 'Lutheran', 'Pentecostal', 'Anglican', 'Non-denominational'
+    'Catholic',
+    'Protestant',
+    'Orthodox',
+    'Baptist',
+    'Methodist',
+    'Presbyterian',
+    'Lutheran',
+    'Pentecostal',
+    'Anglican',
+    'Non-denominational'
   ];
-  
+
   final List<String> _churchAttendanceOptions = [
-    'Weekly', 'Monthly', 'Occasionally', 'Holidays only', 'Rarely'
+    'Weekly',
+    'Monthly',
+    'Occasionally',
+    'Holidays only',
+    'Rarely'
   ];
-  
+
   final List<String> _interestOptions = [
-    'Reading', 'Traveling', 'Cooking', 'Music', 'Sports', 'Art', 'Photography',
-    'Hiking', 'Dancing', 'Volunteering', 'Bible Study', 'Prayer', 'Worship'
+    'Reading',
+    'Traveling',
+    'Cooking',
+    'Music',
+    'Sports',
+    'Art',
+    'Photography',
+    'Hiking',
+    'Dancing',
+    'Volunteering',
+    'Bible Study',
+    'Prayer',
+    'Worship'
   ];
-  
+
   final List<String> _educationOptions = [
-    'High School', 'Some College', 'Bachelor\'s', 'Master\'s', 'Doctorate', 'Trade School'
+    'High School',
+    'Some College',
+    'Bachelor\'s',
+    'Master\'s',
+    'Doctorate',
+    'Trade School'
   ];
-  
+
   final List<String> _occupationOptions = [
-    'Healthcare', 'Education', 'Technology', 'Business', 'Ministry', 'Arts',
-    'Engineering', 'Social Work', 'Non-profit', 'Government', 'Other'
+    'Healthcare',
+    'Education',
+    'Technology',
+    'Business',
+    'Ministry',
+    'Arts',
+    'Engineering',
+    'Social Work',
+    'Non-profit',
+    'Government',
+    'Other'
   ];
-  
+
   final List<String> _languageOptions = [
-    'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese',
-    'Chinese', 'Japanese', 'Korean', 'Arabic', 'Other'
+    'English',
+    'Spanish',
+    'French',
+    'German',
+    'Italian',
+    'Portuguese',
+    'Chinese',
+    'Japanese',
+    'Korean',
+    'Arabic',
+    'Other'
   ];
-  
+
   final List<String> _relationshipGoalOptions = [
-    'Marriage', 'Long-term relationship', 'Friendship first', 'Casual dating'
+    'Marriage',
+    'Long-term relationship',
+    'Friendship first',
+    'Casual dating'
   ];
 
   @override
@@ -148,12 +200,12 @@ class _DiscoveryFiltersScreenState extends State<DiscoveryFiltersScreen>
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _sectionController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
@@ -258,7 +310,8 @@ class _DiscoveryFiltersScreenState extends State<DiscoveryFiltersScreen>
                               _buildRelationshipSection(),
                               const SizedBox(height: AppDimensions.spacing32),
                               _buildActivitySection(),
-                              const SizedBox(height: 100), // Bottom padding for buttons
+                              const SizedBox(
+                                  height: 100), // Bottom padding for buttons
                             ],
                           ),
                         );
@@ -315,21 +368,22 @@ class _DiscoveryFiltersScreenState extends State<DiscoveryFiltersScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ShaderMask(
-                  shaderCallback: (bounds) => AppColors.loveGradient.createShader(bounds),
+                  shaderCallback: (bounds) =>
+                      AppColors.loveGradient.createShader(bounds),
                   child: Text(
                     'Discovery Filters',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.white,
-                    ),
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.white,
+                        ),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Find your perfect match',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                        color: AppColors.textSecondary,
+                      ),
                 ),
               ],
             ),
@@ -348,9 +402,9 @@ class _DiscoveryFiltersScreenState extends State<DiscoveryFiltersScreen>
               child: Text(
                 'Reset',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
           ),
@@ -434,7 +488,8 @@ class _DiscoveryFiltersScreenState extends State<DiscoveryFiltersScreen>
             selectedOptions: _filters.selectedChurchAttendance,
             onSelectionChanged: (selected) {
               setState(() {
-                _filters = _filters.copyWith(selectedChurchAttendance: selected);
+                _filters =
+                    _filters.copyWith(selectedChurchAttendance: selected);
               });
             },
           ),
@@ -632,9 +687,9 @@ class _DiscoveryFiltersScreenState extends State<DiscoveryFiltersScreen>
               Text(
                 title,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
               ),
             ],
           ),
@@ -663,16 +718,16 @@ class _DiscoveryFiltersScreenState extends State<DiscoveryFiltersScreen>
             Text(
               title,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ),
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
             ),
             Text(
               '${formatLabel(values.start)} - ${formatLabel(values.end)}',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-              ),
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
           ],
         ),
@@ -716,16 +771,16 @@ class _DiscoveryFiltersScreenState extends State<DiscoveryFiltersScreen>
             Text(
               title,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ),
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
             ),
             Text(
               formatLabel(value),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-              ),
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
           ],
         ),
@@ -763,9 +818,9 @@ class _DiscoveryFiltersScreenState extends State<DiscoveryFiltersScreen>
         Text(
           title,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
-          ),
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              ),
         ),
         const SizedBox(height: AppDimensions.spacing16),
         Wrap(
@@ -792,21 +847,24 @@ class _DiscoveryFiltersScreenState extends State<DiscoveryFiltersScreen>
                 ),
                 decoration: BoxDecoration(
                   gradient: isSelected ? AppColors.loveGradient : null,
-                  color: isSelected ? null : AppColors.lightGray.withOpacity(0.5),
+                  color:
+                      isSelected ? null : AppColors.lightGray.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(AppDimensions.radiusM),
                   border: Border.all(
-                    color: isSelected 
-                        ? Colors.transparent 
-                        : AppColors.lightGray,
+                    color:
+                        isSelected ? Colors.transparent : AppColors.lightGray,
                     width: 1,
                   ),
                 ),
                 child: Text(
                   option,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: isSelected ? AppColors.white : AppColors.textPrimary,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  ),
+                        color: isSelected
+                            ? AppColors.white
+                            : AppColors.textPrimary,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                      ),
                 ),
               ),
             );
@@ -828,9 +886,9 @@ class _DiscoveryFiltersScreenState extends State<DiscoveryFiltersScreen>
           child: Text(
             title,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
+                ),
           ),
         ),
         const SizedBox(width: AppDimensions.spacing8),
@@ -875,10 +933,10 @@ class _DiscoveryFiltersScreenState extends State<DiscoveryFiltersScreen>
         child: Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: isSelected ? AppColors.white : AppColors.textPrimary,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            fontSize: 12,
-          ),
+                color: isSelected ? AppColors.white : AppColors.textPrimary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                fontSize: 12,
+              ),
         ),
       ),
     );

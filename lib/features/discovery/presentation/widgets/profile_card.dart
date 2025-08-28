@@ -46,7 +46,7 @@ class _ProfileCardState extends State<ProfileCard>
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _scaleController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -156,9 +156,9 @@ class _ProfileCardState extends State<ProfileCard>
             Text(
               widget.profile.firstName,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: AppColors.gray,
-                fontWeight: FontWeight.w600,
-              ),
+                    color: AppColors.gray,
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
           ],
         ),
@@ -222,9 +222,9 @@ class _ProfileCardState extends State<ProfileCard>
           child: Text(
             '${widget.profile.firstName}, ${widget.profile.age}',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: AppColors.white,
-              fontWeight: FontWeight.w700,
-            ),
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
         ),
         if (widget.profile.isOnline)
@@ -240,9 +240,9 @@ class _ProfileCardState extends State<ProfileCard>
             child: Text(
               'Online',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.white,
-                fontWeight: FontWeight.w600,
-              ),
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
           ),
       ],
@@ -261,15 +261,15 @@ class _ProfileCardState extends State<ProfileCard>
         Text(
           widget.profile.location,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.white.withOpacity(0.9),
-          ),
+                color: AppColors.white.withOpacity(0.9),
+              ),
         ),
         const SizedBox(width: AppDimensions.spacing8),
         Text(
           '• ${widget.profile.distanceText}',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.white.withOpacity(0.7),
-          ),
+                color: AppColors.white.withOpacity(0.7),
+              ),
         ),
       ],
     );
@@ -279,9 +279,9 @@ class _ProfileCardState extends State<ProfileCard>
     return Text(
       widget.profile.bio,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: AppColors.white.withOpacity(0.9),
-        height: 1.4,
-      ),
+            color: AppColors.white.withOpacity(0.9),
+            height: 1.4,
+          ),
       maxLines: 3,
       overflow: TextOverflow.ellipsis,
     );
@@ -314,9 +314,9 @@ class _ProfileCardState extends State<ProfileCard>
             child: Text(
               '${widget.profile.denomination} • ${widget.profile.churchAttendance}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.white,
-                fontWeight: FontWeight.w500,
-              ),
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
             ),
@@ -328,7 +328,7 @@ class _ProfileCardState extends State<ProfileCard>
 
   Widget _buildInterests() {
     final displayInterests = widget.profile.interests.take(3).toList();
-    
+
     return Wrap(
       spacing: AppDimensions.spacing8,
       runSpacing: AppDimensions.spacing4,
@@ -345,9 +345,9 @@ class _ProfileCardState extends State<ProfileCard>
           child: Text(
             interest,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.white.withOpacity(0.9),
-              fontSize: 12,
-            ),
+                  color: AppColors.white.withOpacity(0.9),
+                  fontSize: 12,
+                ),
           ),
         );
       }).toList(),
@@ -411,4 +411,4 @@ class _ProfileCardState extends State<ProfileCard>
       ),
     );
   }
-} 
+}

@@ -368,4 +368,4 @@ class AppTheme {
       endIndent: AppDimensions.dividerIndent,
     );
   }
-} 
+}

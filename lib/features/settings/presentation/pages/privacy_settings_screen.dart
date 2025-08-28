@@ -114,7 +114,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
         opacity: _headerFadeAnimation,
         child: Container(
           padding: const EdgeInsets.all(AppDimensions.paddingL),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: AppColors.loveGradient,
             boxShadow: AppColors.cardShadow,
           ),
@@ -132,7 +132,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
                       padding: const EdgeInsets.all(AppDimensions.spacing8),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusS),
                       ),
                       child: const Icon(
                         Icons.arrow_back_ios_new,
@@ -349,9 +350,9 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
         children: [
           Container(
             padding: const EdgeInsets.all(AppDimensions.paddingL),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: AppColors.loveGradient,
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(AppDimensions.radiusL),
                 topRight: Radius.circular(AppDimensions.radiusL),
               ),
@@ -421,7 +422,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
                 const SizedBox(height: AppDimensions.spacing4),
                 Text(
                   subtitle,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
@@ -484,9 +485,9 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
         children: [
           Container(
             padding: const EdgeInsets.all(AppDimensions.paddingL),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: AppColors.loveGradient,
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(AppDimensions.radiusL),
                 topRight: Radius.circular(AppDimensions.radiusL),
               ),
@@ -576,7 +577,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
             Container(
               padding: const EdgeInsets.all(AppDimensions.spacing8),
               decoration: BoxDecoration(
-                color: isDestructive 
+                color: isDestructive
                     ? Colors.red.withOpacity(0.1)
                     : AppColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(AppDimensions.radiusS),
@@ -603,7 +604,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
                   const SizedBox(height: AppDimensions.spacing4),
                   Text(
                     subtitle,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
@@ -612,7 +613,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
                 ],
               ),
             ),
-            Icon(
+            const Icon(
               Icons.arrow_forward_ios,
               color: AppColors.textSecondary,
               size: 16,
@@ -693,4 +694,4 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen>
       ),
     );
   }
-} 
+}

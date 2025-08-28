@@ -26,7 +26,7 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
     with TickerProviderStateMixin {
   late AnimationController _selectionController;
   late Animation<double> _selectionAnimation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -38,7 +38,7 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    
+
     _selectionAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -98,7 +98,7 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
   Widget _buildNavItem(int index) {
     final tab = widget.tabs[index];
     final isSelected = index == widget.currentIndex;
-    
+
     return AnimatedBuilder(
       animation: widget.animations[index],
       builder: (context, child) {
@@ -111,7 +111,7 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
                 HapticFeedback.lightImpact();
                 widget.onTap(index);
               },
-                              child: AnimatedContainer(
+              child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeInOut,
                 padding: const EdgeInsets.symmetric(
@@ -138,13 +138,15 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
                       animation: _selectionAnimation,
                       builder: (context, child) {
                         return Transform.scale(
-                          scale: isSelected 
-                              ? 1.0 + (0.2 * _selectionAnimation.value.clamp(0.0, 1.0))
+                          scale: isSelected
+                              ? 1.0 +
+                                  (0.2 *
+                                      _selectionAnimation.value.clamp(0.0, 1.0))
                               : 1.0,
                           child: Icon(
                             isSelected ? tab.activeIcon : tab.icon,
-                            color: isSelected 
-                                ? AppColors.white 
+                            color: isSelected
+                                ? AppColors.white
                                 : AppColors.textSecondary,
                             size: 22,
                           ),
@@ -155,14 +157,13 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
                     AnimatedDefaultTextStyle(
                       duration: const Duration(milliseconds: 200),
                       style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                        color: isSelected 
-                            ? AppColors.white 
-                            : AppColors.textSecondary,
-                        fontWeight: isSelected 
-                            ? FontWeight.w600 
-                            : FontWeight.w500,
-                        fontSize: isSelected ? 11 : 10,
-                      ),
+                            color: isSelected
+                                ? AppColors.white
+                                : AppColors.textSecondary,
+                            fontWeight:
+                                isSelected ? FontWeight.w600 : FontWeight.w500,
+                            fontSize: isSelected ? 11 : 10,
+                          ),
                       child: Text(tab.label),
                     ),
                   ],
@@ -174,4 +175,4 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
       },
     );
   }
-} 
+}

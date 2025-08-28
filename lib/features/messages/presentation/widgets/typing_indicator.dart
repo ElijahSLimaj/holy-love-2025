@@ -77,9 +77,9 @@ class _TypingIndicatorState extends State<TypingIndicator>
           Text(
             'Typing',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-              fontStyle: FontStyle.italic,
-            ),
+                  color: AppColors.textSecondary,
+                  fontStyle: FontStyle.italic,
+                ),
           ),
           const SizedBox(width: AppDimensions.spacing8),
           Row(
@@ -91,8 +91,10 @@ class _TypingIndicatorState extends State<TypingIndicator>
                   return Transform.translate(
                     offset: Offset(
                       0,
-                      -8 * _dotAnimations[index].value * 
-                          (1 - _dotAnimations[index].value) * 4,
+                      -8 *
+                          _dotAnimations[index].value *
+                          (1 - _dotAnimations[index].value) *
+                          4,
                     ),
                     child: Container(
                       margin: EdgeInsets.only(
@@ -116,4 +118,4 @@ class _TypingIndicatorState extends State<TypingIndicator>
       ),
     );
   }
-} 
+}

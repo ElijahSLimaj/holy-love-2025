@@ -69,7 +69,7 @@ class _ProfileCompletionCardState extends State<ProfileCompletionCard>
     Future.delayed(const Duration(milliseconds: 800), () {
       if (mounted) {
         _progressController.forward();
-        
+
         if (widget.completion < 100) {
           _pulseController.repeat(reverse: true);
         }
@@ -100,32 +100,33 @@ class _ProfileCompletionCardState extends State<ProfileCompletionCard>
 
   List<String> get _missingItems {
     List<String> missing = [];
-    
+
     if (widget.photoCount < widget.maxPhotos) {
       missing.add('Add ${widget.maxPhotos - widget.photoCount} more photos');
     }
-    
+
     if (widget.completion < 100) {
       if (widget.completion < 80) missing.add('Complete your bio');
       if (widget.completion < 90) missing.add('Add your interests');
       if (widget.completion < 95) missing.add('Share your favorite verse');
     }
-    
+
     return missing;
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.completion < 100 ? _pulseAnimation : 
-          const AlwaysStoppedAnimation(1.0),
+      animation: widget.completion < 100
+          ? _pulseAnimation
+          : const AlwaysStoppedAnimation(1.0),
       builder: (context, child) {
         return Transform.scale(
           scale: _pulseAnimation.value,
           child: Container(
             padding: const EdgeInsets.all(AppDimensions.paddingL),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
@@ -198,15 +199,15 @@ class _ProfileCompletionCardState extends State<ProfileCompletionCard>
               Text(
                 'Profile Completion',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
               ),
               Text(
                 _completionMessage,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+                      color: AppColors.textSecondary,
+                    ),
               ),
             ],
           ),
@@ -224,9 +225,9 @@ class _ProfileCompletionCardState extends State<ProfileCompletionCard>
             Text(
               '${widget.completion}% Complete',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: _progressColor,
-              ),
+                    fontWeight: FontWeight.bold,
+                    color: _progressColor,
+                  ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(
@@ -240,9 +241,9 @@ class _ProfileCompletionCardState extends State<ProfileCompletionCard>
               child: Text(
                 '${widget.photoCount}/${widget.maxPhotos} photos',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: _progressColor,
-                  fontWeight: FontWeight.w600,
-                ),
+                      color: _progressColor,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
           ],
@@ -279,37 +280,37 @@ class _ProfileCompletionCardState extends State<ProfileCompletionCard>
         Text(
           'To complete your profile:',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
         ),
         const SizedBox(height: AppDimensions.spacing8),
         ..._missingItems.map((item) => Padding(
-          padding: const EdgeInsets.only(bottom: AppDimensions.spacing4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 6),
-                width: 4,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: _progressColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: AppDimensions.spacing8),
-              Expanded(
-                child: Text(
-                  item,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+              padding: const EdgeInsets.only(bottom: AppDimensions.spacing4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 6),
+                    width: 4,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: _progressColor,
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
+                  const SizedBox(width: AppDimensions.spacing8),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        )).toList(),
+            )),
       ],
     );
   }
@@ -329,4 +330,4 @@ class _ProfileCompletionCardState extends State<ProfileCompletionCard>
       ),
     );
   }
-} 
+}

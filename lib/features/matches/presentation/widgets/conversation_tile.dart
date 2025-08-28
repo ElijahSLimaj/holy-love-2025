@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
-import '../../../discovery/data/models/user_profile.dart';
 import '../pages/matches_screen.dart';
 
 class ConversationTile extends StatefulWidget {
@@ -63,7 +62,7 @@ class _ConversationTileState extends State<ConversationTile>
   String _formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
-    
+
     if (difference.inMinutes < 1) {
       return 'Just now';
     } else if (difference.inMinutes < 60) {
@@ -80,19 +79,20 @@ class _ConversationTileState extends State<ConversationTile>
   @override
   Widget build(BuildContext context) {
     final hasUnread = widget.conversation.unreadCount > 0;
-    
+
     return AnimatedBuilder(
       animation: _pressController,
       builder: (context, child) {
         return Transform.scale(
           scale: _scaleAnimation.value,
           child: Container(
-            margin: const EdgeInsets.symmetric(vertical: AppDimensions.spacing4),
+            margin:
+                const EdgeInsets.symmetric(vertical: AppDimensions.spacing4),
             decoration: BoxDecoration(
               color: _colorAnimation.value,
               borderRadius: BorderRadius.circular(AppDimensions.radiusL),
               border: Border.all(
-                color: hasUnread 
+                color: hasUnread
                     ? AppColors.primary.withOpacity(0.3)
                     : AppColors.border.withOpacity(0.1),
                 width: hasUnread ? 1.5 : 1,
@@ -149,8 +149,8 @@ class _ConversationTileState extends State<ConversationTile>
             color: AppColors.lightGray,
             shape: BoxShape.circle,
             border: Border.all(
-              color: widget.conversation.user.isOnline 
-                  ? AppColors.success 
+              color: widget.conversation.user.isOnline
+                  ? AppColors.success
                   : AppColors.border,
               width: 2,
             ),
@@ -193,9 +193,9 @@ class _ConversationTileState extends State<ConversationTile>
               child: Text(
                 widget.conversation.user.fullName,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -214,10 +214,10 @@ class _ConversationTileState extends State<ConversationTile>
                 child: Text(
                   'Online',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.success,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 10,
-                  ),
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 10,
+                      ),
                 ),
               ),
           ],
@@ -226,13 +226,13 @@ class _ConversationTileState extends State<ConversationTile>
         Text(
           widget.conversation.lastMessage,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: widget.conversation.unreadCount > 0 
-                ? AppColors.textPrimary
-                : AppColors.textSecondary,
-            fontWeight: widget.conversation.unreadCount > 0 
-                ? FontWeight.w500 
-                : FontWeight.w400,
-          ),
+                color: widget.conversation.unreadCount > 0
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary,
+                fontWeight: widget.conversation.unreadCount > 0
+                    ? FontWeight.w500
+                    : FontWeight.w400,
+              ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
@@ -247,13 +247,13 @@ class _ConversationTileState extends State<ConversationTile>
         Text(
           _formatTimestamp(widget.conversation.timestamp),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: widget.conversation.unreadCount > 0 
-                ? AppColors.primary
-                : AppColors.textTertiary,
-            fontWeight: widget.conversation.unreadCount > 0 
-                ? FontWeight.w600
-                : FontWeight.w500,
-          ),
+                color: widget.conversation.unreadCount > 0
+                    ? AppColors.primary
+                    : AppColors.textTertiary,
+                fontWeight: widget.conversation.unreadCount > 0
+                    ? FontWeight.w600
+                    : FontWeight.w500,
+              ),
         ),
         const SizedBox(height: AppDimensions.spacing8),
         if (widget.conversation.unreadCount > 0)
@@ -273,14 +273,14 @@ class _ConversationTileState extends State<ConversationTile>
             ),
             child: Center(
               child: Text(
-                widget.conversation.unreadCount > 9 
-                    ? '9+' 
+                widget.conversation.unreadCount > 9
+                    ? '9+'
                     : widget.conversation.unreadCount.toString(),
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                ),
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                    ),
               ),
             ),
           )
@@ -296,4 +296,4 @@ class _ConversationTileState extends State<ConversationTile>
       ],
     );
   }
-} 
+}

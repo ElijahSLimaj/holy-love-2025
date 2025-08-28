@@ -84,35 +84,40 @@ class _MatchesScreenState extends State<MatchesScreen>
     // Load some mock matches and conversations
     final allProfiles = MockUsers.sampleProfiles;
     _newMatches = allProfiles.take(4).toList();
-    
+
     _conversations = [
       ConversationData(
         user: allProfiles[0],
-        lastMessage: 'Hey! Thanks for the match! I love your testimony about serving in children\'s ministry 🙏',
+        lastMessage:
+            'Hey! Thanks for the match! I love your testimony about serving in children\'s ministry 🙏',
         timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
         unreadCount: 2,
       ),
       ConversationData(
         user: allProfiles[1],
-        lastMessage: 'That\'s so cool that you\'re into rock climbing too! Have you tried the routes at...',
+        lastMessage:
+            'That\'s so cool that you\'re into rock climbing too! Have you tried the routes at...',
         timestamp: DateTime.now().subtract(const Duration(hours: 2)),
         unreadCount: 0,
       ),
       ConversationData(
         user: allProfiles[2],
-        lastMessage: 'I saw your photos from the mission trip - that must have been amazing! 💕',
+        lastMessage:
+            'I saw your photos from the mission trip - that must have been amazing! 💕',
         timestamp: DateTime.now().subtract(const Duration(hours: 5)),
         unreadCount: 1,
       ),
       ConversationData(
         user: allProfiles[3],
-        lastMessage: 'Would love to hear more about your worship ministry! Maybe we could grab coffee?',
+        lastMessage:
+            'Would love to hear more about your worship ministry! Maybe we could grab coffee?',
         timestamp: DateTime.now().subtract(const Duration(days: 1)),
         unreadCount: 0,
       ),
       ConversationData(
         user: allProfiles[4],
-        lastMessage: 'Your favorite verse is so beautiful! It\'s been encouraging me this week ✨',
+        lastMessage:
+            'Your favorite verse is so beautiful! It\'s been encouraging me this week ✨',
         timestamp: DateTime.now().subtract(const Duration(days: 2)),
         unreadCount: 0,
       ),
@@ -124,11 +129,12 @@ class _MatchesScreenState extends State<MatchesScreen>
   }
 
   void _startAnimations() async {
-    await Future.delayed(const Duration(milliseconds: 150)); // Slightly longer delay
+    await Future.delayed(
+        const Duration(milliseconds: 150)); // Slightly longer delay
     if (mounted) {
       _fadeController.forward();
       _headerController.forward();
-      
+
       await Future.delayed(const Duration(milliseconds: 400)); // Longer delay
       if (mounted) {
         _listController.forward();
@@ -192,7 +198,7 @@ class _MatchesScreenState extends State<MatchesScreen>
             child: Container(
               padding: const EdgeInsets.all(AppDimensions.paddingL),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
@@ -216,7 +222,8 @@ class _MatchesScreenState extends State<MatchesScreen>
                       gradient: const LinearGradient(
                         colors: [AppColors.accent, AppColors.accentLight],
                       ),
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusM),
                       boxShadow: AppColors.cardShadow,
                     ),
                     child: const Icon(
@@ -232,16 +239,20 @@ class _MatchesScreenState extends State<MatchesScreen>
                       children: [
                         Text(
                           AppStrings.matches,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                         ),
                         Text(
                           '${_newMatches.length} new matches • ${_conversations.length} conversations',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
                         ),
                       ],
                     ),
@@ -300,7 +311,7 @@ class _MatchesScreenState extends State<MatchesScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.auto_awesome,
                         color: AppColors.primary,
                         size: AppDimensions.iconS,
@@ -308,10 +319,11 @@ class _MatchesScreenState extends State<MatchesScreen>
                       const SizedBox(width: AppDimensions.spacing8),
                       Text(
                         AppStrings.newMatches,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
                       ),
                     ],
                   ),
@@ -328,25 +340,34 @@ class _MatchesScreenState extends State<MatchesScreen>
                         builder: (context, child) {
                           // Safe animation calculation with proper clamping
                           final delay = index * 0.15;
-                          final progress = (_listController.value - delay).clamp(0.0, 1.0);
-                          
+                          final progress =
+                              (_listController.value - delay).clamp(0.0, 1.0);
+
                           // Use easeOut instead of easeOutBack to avoid overshoot
-                          final animationValue = Curves.easeOut.transform(progress).clamp(0.0, 1.0);
-                          final scaleValue = (0.7 + (0.3 * animationValue)).clamp(0.0, 1.0);
-                          
+                          final animationValue = Curves.easeOut
+                              .transform(progress)
+                              .clamp(0.0, 1.0);
+                          final scaleValue =
+                              (0.7 + (0.3 * animationValue)).clamp(0.0, 1.0);
+
                           return Transform.scale(
                             scale: scaleValue,
                             child: Opacity(
                               opacity: animationValue,
                               child: Container(
                                 margin: EdgeInsets.only(
-                                  right: index == _newMatches.length - 1 ? 0 : AppDimensions.spacing16,
+                                  right: index == _newMatches.length - 1
+                                      ? 0
+                                      : AppDimensions.spacing16,
                                 ),
                                 child: MatchCard(
-                                  key: ValueKey('match_${_newMatches[index].id}'),
+                                  key: ValueKey(
+                                      'match_${_newMatches[index].id}'),
                                   user: _newMatches[index],
-                                  onTap: () => _handleMatchTap(_newMatches[index]),
-                                  onMessageTap: () => _handleMessageTap(_newMatches[index]),
+                                  onTap: () =>
+                                      _handleMatchTap(_newMatches[index]),
+                                  onMessageTap: () =>
+                                      _handleMessageTap(_newMatches[index]),
                                 ),
                               ),
                             ),
@@ -380,9 +401,9 @@ class _MatchesScreenState extends State<MatchesScreen>
                     Text(
                       AppStrings.conversations,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                     ),
                     const Spacer(),
                     TextButton(
@@ -393,9 +414,9 @@ class _MatchesScreenState extends State<MatchesScreen>
                       child: Text(
                         'See All',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                     ),
                   ],
@@ -404,23 +425,27 @@ class _MatchesScreenState extends State<MatchesScreen>
                 ..._conversations.asMap().entries.map((entry) {
                   final index = entry.key;
                   final conversation = entry.value;
-                  
+
                   return AnimatedBuilder(
                     animation: _listController,
                     builder: (context, child) {
                       // Safe animation calculation for conversations
                       final delay = 0.3 + (index * 0.1);
-                      final progress = (_listController.value - delay).clamp(0.0, 1.0);
-                      final animationValue = Curves.easeOut.transform(progress).clamp(0.0, 1.0);
-                      
+                      final progress =
+                          (_listController.value - delay).clamp(0.0, 1.0);
+                      final animationValue =
+                          Curves.easeOut.transform(progress).clamp(0.0, 1.0);
+
                       return Transform.translate(
                         offset: Offset(30 * (1 - animationValue), 0),
                         child: Opacity(
                           opacity: animationValue,
                           child: Container(
-                            margin: const EdgeInsets.only(bottom: AppDimensions.spacing8),
+                            margin: const EdgeInsets.only(
+                                bottom: AppDimensions.spacing8),
                             child: ConversationTile(
-                              key: ValueKey('conversation_${conversation.user.id}'),
+                              key: ValueKey(
+                                  'conversation_${conversation.user.id}'),
                               conversation: conversation,
                               onTap: () => _handleConversationTap(conversation),
                             ),
@@ -429,7 +454,7 @@ class _MatchesScreenState extends State<MatchesScreen>
                       );
                     },
                   );
-                }).toList(),
+                }),
               ],
             ),
           ),
@@ -444,34 +469,34 @@ class _MatchesScreenState extends State<MatchesScreen>
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
             MemberProfileScreen(
-              user: user,
-              onLike: () {
-                // Handle like action from profile view
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('You liked ${user.firstName}!'),
-                    backgroundColor: AppColors.success,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-                    ),
-                  ),
-                );
-              },
-              onPass: () {
-                // Handle pass action from profile view
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('You passed on ${user.firstName}'),
-                    backgroundColor: AppColors.textSecondary,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-                    ),
-                  ),
-                );
-              },
-            ),
+          user: user,
+          onLike: () {
+            // Handle like action from profile view
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('You liked ${user.firstName}!'),
+                backgroundColor: AppColors.success,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                ),
+              ),
+            );
+          },
+          onPass: () {
+            // Handle pass action from profile view
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('You passed on ${user.firstName}'),
+                backgroundColor: AppColors.textSecondary,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                ),
+              ),
+            );
+          },
+        ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return SlideTransition(
             position: Tween<Offset>(
@@ -549,4 +574,4 @@ class ConversationData {
     required this.timestamp,
     required this.unreadCount,
   });
-} 
+}

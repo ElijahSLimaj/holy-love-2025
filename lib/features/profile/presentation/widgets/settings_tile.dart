@@ -151,17 +151,17 @@ class _SettingsTileState extends State<SettingsTile>
         Text(
           widget.title,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
         ),
         const SizedBox(height: AppDimensions.spacing4),
         Text(
           widget.subtitle,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: AppColors.textSecondary,
-            height: 1.3,
-          ),
+                color: AppColors.textSecondary,
+                height: 1.3,
+              ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
@@ -170,11 +170,11 @@ class _SettingsTileState extends State<SettingsTile>
   }
 
   Widget _buildTrailing() {
-    return widget.trailing ?? 
-        Icon(
+    return widget.trailing ??
+        const Icon(
           Icons.arrow_forward_ios,
           color: AppColors.textTertiary,
           size: AppDimensions.iconS,
         );
   }
-} 
+}

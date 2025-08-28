@@ -55,9 +55,9 @@ class UserProfile {
 
   String get fullName => '$firstName $lastName';
   String get firstPhotoUrl => photoUrls.isNotEmpty ? photoUrls.first : '';
-  
+
   String get ageLocationText => '$age • $location';
-  
+
   String get distanceText {
     if (distanceKm < 1) return 'Less than 1 km away';
     if (distanceKm == 1) return '1 km away';
@@ -66,10 +66,10 @@ class UserProfile {
 
   String get onlineStatusText {
     if (isOnline) return 'Online now';
-    
+
     final now = DateTime.now();
     final difference = now.difference(lastSeen);
-    
+
     if (difference.inMinutes < 60) {
       return '${difference.inMinutes}m ago';
     } else if (difference.inHours < 24) {
@@ -206,4 +206,4 @@ class UserProfile {
 
   @override
   int get hashCode => id.hashCode;
-} 
+}

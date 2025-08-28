@@ -33,7 +33,6 @@ class SwipeableCardStackState extends State<SwipeableCardStack>
   late Animation<double> _rotationAnimation;
   late Animation<double> _scaleAnimation;
 
-
   int _currentIndex = 0;
   Offset _dragStart = Offset.zero;
   Offset _dragPosition = Offset.zero;
@@ -84,8 +83,6 @@ class SwipeableCardStackState extends State<SwipeableCardStack>
       parent: _scaleController,
       curve: Curves.easeInOut,
     ));
-
-
   }
 
   @override
@@ -106,7 +103,7 @@ class SwipeableCardStackState extends State<SwipeableCardStack>
       return _buildEmptyState();
     }
 
-    return Container(
+    return SizedBox(
       height: 600,
       child: Stack(
         alignment: Alignment.center,
@@ -142,17 +139,14 @@ class SwipeableCardStackState extends State<SwipeableCardStack>
           _scaleController,
         ]),
         builder: (context, child) {
-          final swipeOffset = _isDragging
-              ? _dragPosition
-              : _swipeAnimation.value;
-          
+          final swipeOffset =
+              _isDragging ? _dragPosition : _swipeAnimation.value;
+
           final rotation = _isDragging
               ? _dragPosition.dx * _rotationFactor / 1000
               : _rotationAnimation.value;
 
-          final cardScale = _isDragging
-              ? _scaleAnimation.value
-              : 1.0;
+          final cardScale = _isDragging ? _scaleAnimation.value : 1.0;
 
           return Transform.translate(
             offset: Offset(swipeOffset.dx, swipeOffset.dy + yOffset),
@@ -191,7 +185,7 @@ class SwipeableCardStackState extends State<SwipeableCardStack>
   }
 
   Widget _buildEmptyState() {
-    return Container(
+    return SizedBox(
       height: 600,
       child: Center(
         child: Column(
@@ -199,7 +193,7 @@ class SwipeableCardStackState extends State<SwipeableCardStack>
           children: [
             Container(
               padding: const EdgeInsets.all(AppDimensions.paddingXL),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: AppColors.loveGradient,
                 shape: BoxShape.circle,
               ),
@@ -213,16 +207,16 @@ class SwipeableCardStackState extends State<SwipeableCardStack>
             Text(
               'No More Profiles',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
             ),
             const SizedBox(height: AppDimensions.spacing12),
             Text(
               'Check back later for new matches!',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppColors.textSecondary,
-              ),
+                    color: AppColors.textSecondary,
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -236,11 +230,11 @@ class SwipeableCardStackState extends State<SwipeableCardStack>
     _swipeController.stop();
     _swipeController.reset();
     _scaleController.stop();
-    
+
     _dragStart = details.localPosition;
     _isDragging = true;
     _dragPosition = Offset.zero; // Reset drag position
-    
+
     _scaleController.forward();
     HapticFeedback.lightImpact();
   }
@@ -253,7 +247,7 @@ class SwipeableCardStackState extends State<SwipeableCardStack>
     });
 
     // Provide haptic feedback at swipe threshold
-    if (_dragPosition.dx.abs() > _swipeThreshold && 
+    if (_dragPosition.dx.abs() > _swipeThreshold &&
         _dragPosition.dx.abs() < _swipeThreshold + 10) {
       HapticFeedback.selectionClick();
     }
@@ -266,8 +260,10 @@ class SwipeableCardStackState extends State<SwipeableCardStack>
     _scaleController.reverse();
 
     final velocity = details.velocity.pixelsPerSecond;
-    final isSwipeLeft = _dragPosition.dx < -_swipeThreshold || velocity.dx < -1000;
-    final isSwipeRight = _dragPosition.dx > _swipeThreshold || velocity.dx > 1000;
+    final isSwipeLeft =
+        _dragPosition.dx < -_swipeThreshold || velocity.dx < -1000;
+    final isSwipeRight =
+        _dragPosition.dx > _swipeThreshold || velocity.dx > 1000;
 
     if (isSwipeLeft) {
       _animateSwipe(SwipeDirection.left);
@@ -281,7 +277,8 @@ class SwipeableCardStackState extends State<SwipeableCardStack>
   void _animateSwipe(SwipeDirection direction) {
     final screenWidth = MediaQuery.of(context).size.width;
     final endX = direction == SwipeDirection.left ? -screenWidth : screenWidth;
-    final endY = _dragPosition.dy + (direction == SwipeDirection.left ? 100 : -100);
+    final endY =
+        _dragPosition.dy + (direction == SwipeDirection.left ? 100 : -100);
 
     _swipeAnimation = Tween<Offset>(
       begin: _dragPosition,
@@ -361,37 +358,37 @@ class SwipeableCardStackState extends State<SwipeableCardStack>
   // Public methods for programmatic swiping
   void swipeLeft() {
     if (!_hasMoreCards || _isDragging) return;
-    
+
     // Reset any ongoing animations
     _swipeController.stop();
     _swipeController.reset();
     _scaleController.stop();
     _scaleController.reset();
-    
+
     setState(() {
       _dragPosition = Offset.zero;
       _isDragging = false;
     });
-    
+
     _animateSwipe(SwipeDirection.left);
   }
 
   void swipeRight() {
     if (!_hasMoreCards || _isDragging) return;
-    
+
     // Reset any ongoing animations
     _swipeController.stop();
     _swipeController.reset();
     _scaleController.stop();
     _scaleController.reset();
-    
+
     setState(() {
       _dragPosition = Offset.zero;
       _isDragging = false;
     });
-    
+
     _animateSwipe(SwipeDirection.right);
   }
 }
 
-enum SwipeDirection { left, right } 
+enum SwipeDirection { left, right }

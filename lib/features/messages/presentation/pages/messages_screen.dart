@@ -3,10 +3,9 @@ import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../discovery/data/models/user_profile.dart';
 import '../../../discovery/data/mock_users.dart';
 import '../../../matches/presentation/widgets/conversation_tile.dart';
-import '../../../matches/presentation/pages/matches_screen.dart'; // For ConversationData
+import '../../../matches/presentation/pages/matches_screen.dart';
 import 'chat_screen.dart';
 
 class MessagesScreen extends StatefulWidget {
@@ -81,53 +80,61 @@ class _MessagesScreenState extends State<MessagesScreen>
   void _loadConversations() {
     // Load the same conversations as in matches screen plus additional ones
     final allProfiles = MockUsers.sampleProfiles;
-    
+
     _conversations = [
       ConversationData(
         user: allProfiles[0],
-        lastMessage: 'Hey! Thanks for the match! I love your testimony about serving in children\'s ministry 🙏',
+        lastMessage:
+            'Hey! Thanks for the match! I love your testimony about serving in children\'s ministry 🙏',
         timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
         unreadCount: 2,
       ),
       ConversationData(
         user: allProfiles[1],
-        lastMessage: 'That\'s so cool that you\'re into rock climbing too! Have you tried the routes at...',
+        lastMessage:
+            'That\'s so cool that you\'re into rock climbing too! Have you tried the routes at...',
         timestamp: DateTime.now().subtract(const Duration(hours: 2)),
         unreadCount: 0,
       ),
       ConversationData(
         user: allProfiles[2],
-        lastMessage: 'I saw your photos from the mission trip - that must have been amazing! 💕',
+        lastMessage:
+            'I saw your photos from the mission trip - that must have been amazing! 💕',
         timestamp: DateTime.now().subtract(const Duration(hours: 5)),
         unreadCount: 1,
       ),
       ConversationData(
         user: allProfiles[3],
-        lastMessage: 'Would love to hear more about your worship ministry! Maybe we could grab coffee?',
+        lastMessage:
+            'Would love to hear more about your worship ministry! Maybe we could grab coffee?',
         timestamp: DateTime.now().subtract(const Duration(days: 1)),
         unreadCount: 0,
       ),
       ConversationData(
         user: allProfiles[4],
-        lastMessage: 'Your favorite verse is so beautiful! It\'s been encouraging me this week ✨',
+        lastMessage:
+            'Your favorite verse is so beautiful! It\'s been encouraging me this week ✨',
         timestamp: DateTime.now().subtract(const Duration(days: 2)),
         unreadCount: 0,
       ),
       ConversationData(
         user: allProfiles[5],
-        lastMessage: 'Hope you\'re having a blessed week! Looking forward to hearing from you 😊',
+        lastMessage:
+            'Hope you\'re having a blessed week! Looking forward to hearing from you 😊',
         timestamp: DateTime.now().subtract(const Duration(days: 3)),
         unreadCount: 0,
       ),
       ConversationData(
         user: allProfiles[6],
-        lastMessage: 'Thank you for sharing that verse with me. It really spoke to my heart 💖',
+        lastMessage:
+            'Thank you for sharing that verse with me. It really spoke to my heart 💖',
         timestamp: DateTime.now().subtract(const Duration(days: 4)),
         unreadCount: 3,
       ),
       ConversationData(
         user: allProfiles[7],
-        lastMessage: 'I love how passionate you are about your faith! Would love to learn more about your church',
+        lastMessage:
+            'I love how passionate you are about your faith! Would love to learn more about your church',
         timestamp: DateTime.now().subtract(const Duration(days: 5)),
         unreadCount: 0,
       ),
@@ -143,7 +150,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     if (mounted) {
       _fadeController.forward();
       _headerController.forward();
-      
+
       await Future.delayed(const Duration(milliseconds: 400));
       if (mounted) {
         _listController.forward();
@@ -176,21 +183,21 @@ class _MessagesScreenState extends State<MessagesScreen>
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: AnimatedBuilder(
-        animation: _fadeAnimation,
-        builder: (context, child) {
+          animation: _fadeAnimation,
+          builder: (context, child) {
             final opacityValue = _fadeAnimation.value.clamp(0.0, 1.0);
-          return Opacity(
+            return Opacity(
               opacity: opacityValue,
               child: Column(
                 children: [
                   _buildHeader(),
                   Expanded(
-            child: _buildContent(),
+                    child: _buildContent(),
                   ),
                 ],
               ),
-          );
-        },
+            );
+          },
         ),
       ),
     );
@@ -207,7 +214,7 @@ class _MessagesScreenState extends State<MessagesScreen>
             child: Container(
               padding: const EdgeInsets.all(AppDimensions.paddingL),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
@@ -224,14 +231,15 @@ class _MessagesScreenState extends State<MessagesScreen>
                 ],
               ),
               child: Row(
-        children: [
-          Container(
+                children: [
+                  Container(
                     padding: const EdgeInsets.all(AppDimensions.paddingS),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primary, AppColors.primaryLight],
-              ),
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColors.primary, AppColors.primaryLight],
+                      ),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusM),
                       boxShadow: AppColors.cardShadow,
                     ),
                     child: const Icon(
@@ -247,22 +255,26 @@ class _MessagesScreenState extends State<MessagesScreen>
                       children: [
                         Text(
                           AppStrings.messages,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                         ),
                         Text(
                           '${_conversations.where((c) => c.unreadCount > 0).length} unread • ${_conversations.length} total conversations',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
                         ),
                       ],
                     ),
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -279,13 +291,14 @@ class _MessagesScreenState extends State<MessagesScreen>
           child: Transform.translate(
             offset: Offset(0, 20 * (1 - _listController.value)),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingL),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.paddingL),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: AppDimensions.spacing24),
                   _buildActiveConversations(),
-          const SizedBox(height: AppDimensions.spacing24),
+                  const SizedBox(height: AppDimensions.spacing24),
                 ],
               ),
             ),
@@ -317,7 +330,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.forum,
                     color: AppColors.primary,
                     size: AppDimensions.iconS,
@@ -326,11 +339,11 @@ class _MessagesScreenState extends State<MessagesScreen>
                   Text(
                     'Active Conversations',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -339,23 +352,26 @@ class _MessagesScreenState extends State<MessagesScreen>
         ..._conversations.asMap().entries.map((entry) {
           final index = entry.key;
           final conversation = entry.value;
-          
+
           return AnimatedBuilder(
             animation: _listController,
             builder: (context, child) {
               // Safe animation calculation for conversations
               final delay = index * 0.1;
               final progress = (_listController.value - delay).clamp(0.0, 1.0);
-              final animationValue = Curves.easeOut.transform(progress).clamp(0.0, 1.0);
-              
+              final animationValue =
+                  Curves.easeOut.transform(progress).clamp(0.0, 1.0);
+
               return Transform.translate(
                 offset: Offset(30 * (1 - animationValue), 0),
                 child: Opacity(
                   opacity: animationValue,
                   child: Container(
-                    margin: const EdgeInsets.only(bottom: AppDimensions.spacing8),
+                    margin:
+                        const EdgeInsets.only(bottom: AppDimensions.spacing8),
                     child: ConversationTile(
-                      key: ValueKey('messages_conversation_${conversation.user.id}'),
+                      key: ValueKey(
+                          'messages_conversation_${conversation.user.id}'),
                       conversation: conversation,
                       onTap: () => _handleConversationTap(conversation),
                     ),
@@ -364,7 +380,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               );
             },
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -391,4 +407,4 @@ class _MessagesScreenState extends State<MessagesScreen>
       ),
     );
   }
-} 
+}

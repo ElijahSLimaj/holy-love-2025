@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
-import '../../../../core/constants/app_strings.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../data/models/user_profile.dart';
 import '../../../messages/presentation/pages/chat_screen.dart';
@@ -30,12 +29,12 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
   late AnimationController _slideController;
   late AnimationController _photoController;
   late AnimationController _actionController;
-  
+
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _photoScaleAnimation;
   late Animation<Offset> _actionSlideAnimation;
-  
+
   late PageController _pageController;
   int _currentPhotoIndex = 0;
   late ScrollController _scrollController;
@@ -54,17 +53,17 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _photoController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    
+
     _actionController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
@@ -105,13 +104,13 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
 
   void _startAnimations() async {
     _fadeController.forward();
-    
+
     await Future.delayed(const Duration(milliseconds: 200));
     if (mounted) {
       _slideController.forward();
       _photoController.forward();
     }
-    
+
     await Future.delayed(const Duration(milliseconds: 600));
     if (mounted) {
       _actionController.forward();
@@ -161,7 +160,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
               );
             },
           ),
-          
+
           // Back button
           Positioned(
             top: MediaQuery.of(context).padding.top + AppDimensions.paddingM,
@@ -193,7 +192,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
               },
             ),
           ),
-          
+
           // Action buttons
           Positioned(
             bottom: 0,
@@ -280,7 +279,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                         );
                       },
                     ),
-                    
+
                     // Photo indicators
                     if (widget.user.photoUrls.length > 1)
                       Positioned(
@@ -289,7 +288,10 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                         right: 0,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: widget.user.photoUrls.asMap().entries.map((entry) {
+                          children: widget.user.photoUrls
+                              .asMap()
+                              .entries
+                              .map((entry) {
                             return AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
                               margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -305,7 +307,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                           }).toList(),
                         ),
                       ),
-                    
+
                     // Online status
                     Positioned(
                       top: MediaQuery.of(context).padding.top + 80,
@@ -316,10 +318,11 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                           vertical: AppDimensions.paddingS,
                         ),
                         decoration: BoxDecoration(
-                          color: widget.user.isOnline 
+                          color: widget.user.isOnline
                               ? AppColors.success.withOpacity(0.9)
                               : AppColors.textSecondary.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusL),
                           boxShadow: AppColors.cardShadow,
                         ),
                         child: Row(
@@ -328,7 +331,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                             Container(
                               width: 8,
                               height: 8,
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 color: AppColors.white,
                                 shape: BoxShape.circle,
                               ),
@@ -336,16 +339,19 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                             const SizedBox(width: AppDimensions.spacing8),
                             Text(
                               widget.user.isOnline ? 'Online' : 'Offline',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: AppColors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                    
+
                     // Gradient overlay at bottom
                     Positioned(
                       bottom: 0,
@@ -365,7 +371,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                         ),
                       ),
                     ),
-                    
+
                     // Basic info overlay
                     Positioned(
                       bottom: AppDimensions.paddingL,
@@ -379,10 +385,13 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                               Expanded(
                                 child: Text(
                                   '${widget.user.firstName}, ${widget.user.age}',
-                                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                    color: AppColors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(
+                                        color: AppColors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                 ),
                               ),
                               Container(
@@ -392,14 +401,18 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                                 ),
                                 decoration: BoxDecoration(
                                   gradient: AppColors.loveGradient,
-                                  borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+                                  borderRadius: BorderRadius.circular(
+                                      AppDimensions.radiusL),
                                 ),
                                 child: Text(
                                   widget.user.denomination,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppColors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: AppColors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                 ),
                               ),
                             ],
@@ -415,9 +428,12 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                               const SizedBox(width: AppDimensions.spacing4),
                               Text(
                                 '${widget.user.location} • ${widget.user.distanceKm}km away',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.white.withOpacity(0.9),
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: AppColors.white.withOpacity(0.9),
+                                    ),
                               ),
                             ],
                           ),
@@ -463,9 +479,9 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
       child: Text(
         widget.user.bio,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: AppColors.textPrimary,
-          height: 1.5,
-        ),
+              color: AppColors.textPrimary,
+              height: 1.5,
+            ),
       ),
     );
   }
@@ -504,7 +520,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
               children: [
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.auto_stories,
                       color: AppColors.primary,
                       size: AppDimensions.iconS,
@@ -513,9 +529,9 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                     Text(
                       'Favorite Verse',
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                   ],
                 ),
@@ -523,10 +539,10 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                 Text(
                   widget.user.favoriteVerse,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontStyle: FontStyle.italic,
-                    fontWeight: FontWeight.w500,
-                  ),
+                        color: AppColors.textPrimary,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
               ],
             ),
@@ -538,17 +554,17 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
               Text(
                 'Faith Story',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
               const SizedBox(height: AppDimensions.spacing8),
               Text(
                 widget.user.faithStory,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
               ),
             ],
           ),
@@ -651,9 +667,9 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
             child: Text(
               interest,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w500,
-              ),
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
             ),
           );
         }).toList(),
@@ -672,7 +688,8 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
               Expanded(
                 child: _buildLifestyleTile(
                   label: 'Children',
-                  value: widget.user.hasChildren ? 'Has children' : 'No children',
+                  value:
+                      widget.user.hasChildren ? 'Has children' : 'No children',
                   icon: Icons.child_care,
                   isPositive: widget.user.hasChildren,
                 ),
@@ -741,9 +758,9 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
             Text(
               title,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-              ),
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ],
         ),
@@ -782,9 +799,9 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
               ),
             ],
           ),
@@ -792,9 +809,9 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
           Text(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
         ],
       ),
@@ -810,12 +827,12 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
     return Container(
       padding: const EdgeInsets.all(AppDimensions.paddingM),
       decoration: BoxDecoration(
-        color: isPositive 
+        color: isPositive
             ? AppColors.success.withOpacity(0.1)
             : AppColors.error.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppDimensions.radiusM),
         border: Border.all(
-          color: isPositive 
+          color: isPositive
               ? AppColors.success.withOpacity(0.3)
               : AppColors.error.withOpacity(0.3),
           width: 1,
@@ -836,9 +853,9 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                 child: Text(
                   label,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
               ),
             ],
@@ -847,9 +864,9 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
           Text(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: isPositive ? AppColors.success : AppColors.error,
-              fontWeight: FontWeight.w600,
-            ),
+                  color: isPositive ? AppColors.success : AppColors.error,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
         ],
       ),
@@ -893,7 +910,8 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                       PageRouteBuilder(
                         pageBuilder: (context, animation, secondaryAnimation) =>
                             ChatScreen(user: widget.user),
-                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                        transitionsBuilder:
+                            (context, animation, secondaryAnimation, child) {
                           return SlideTransition(
                             position: Tween<Offset>(
                               begin: const Offset(1.0, 0.0),
@@ -938,7 +956,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
             ],
           ),
           const SizedBox(height: AppDimensions.spacing16),
-          
+
           // Main action buttons
           Row(
             children: [
@@ -974,4 +992,4 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
       ),
     );
   }
-} 
+}

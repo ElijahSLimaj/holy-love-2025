@@ -6,14 +6,13 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../widgets/swipeable_card_stack.dart';
-import '../../../../shared/widgets/custom_button.dart';
 import 'member_profile_screen.dart';
 
 enum ViewMode { list, swipe }
 
 class DiscoveryScreen extends StatefulWidget {
   final ViewMode viewMode;
-  
+
   const DiscoveryScreen({
     super.key,
     required this.viewMode,
@@ -30,7 +29,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   late AnimationController _headerAnimationController;
   late Animation<double> _headerFadeAnimation;
   late Animation<Offset> _headerSlideAnimation;
-  
+
   final ScrollController _scrollController = ScrollController();
   final Set<String> _likedProfiles = {};
   final Set<String> _passedProfiles = {};
@@ -40,17 +39,17 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   void initState() {
     super.initState();
     _profiles = MockUsers.getDiscoveryProfiles();
-    
+
     _listAnimationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _headerAnimationController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _headerFadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -58,7 +57,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       parent: _headerAnimationController,
       curve: Curves.easeOut,
     ));
-    
+
     _headerSlideAnimation = Tween<Offset>(
       begin: const Offset(0, -0.5),
       end: Offset.zero,
@@ -66,7 +65,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       parent: _headerAnimationController,
       curve: Curves.easeOutBack,
     ));
-    
+
     _startAnimations();
   }
 
@@ -83,7 +82,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   void didUpdateWidget(DiscoveryScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Restart list animations when switching to list view
-    if (oldWidget.viewMode != widget.viewMode && widget.viewMode == ViewMode.list) {
+    if (oldWidget.viewMode != widget.viewMode &&
+        widget.viewMode == ViewMode.list) {
       _listAnimationController.reset();
       Future.delayed(const Duration(milliseconds: 100), () {
         if (mounted) {
@@ -123,10 +123,10 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
             MemberProfileScreen(
-              user: profile,
-              onLike: () => _onLike(profile),
-              onPass: () => _onPass(profile),
-            ),
+          user: profile,
+          onLike: () => _onLike(profile),
+          onPass: () => _onPass(profile),
+        ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return SlideTransition(
             position: Tween<Offset>(
@@ -157,7 +157,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           children: [
             _buildHeader(),
             Expanded(
-              child: widget.viewMode == ViewMode.list 
+              child: widget.viewMode == ViewMode.list
                   ? _buildProfileList()
                   : _buildSwipeView(),
             ),
@@ -185,7 +185,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                         padding: const EdgeInsets.all(AppDimensions.paddingS),
                         decoration: BoxDecoration(
                           gradient: AppColors.loveGradient,
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusM),
                           boxShadow: AppColors.cardShadow,
                         ),
                         child: const Icon(
@@ -201,16 +202,22 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                           children: [
                             Text(
                               AppStrings.discover,
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimary,
+                                  ),
                             ),
                             Text(
                               'Find your God-centered match',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
                             ),
                           ],
                         ),
@@ -225,7 +232,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                     ),
                     decoration: BoxDecoration(
                       gradient: AppColors.loveGradient.scale(0.1),
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusL),
                       border: Border.all(
                         color: AppColors.primary.withOpacity(0.2),
                         width: 1,
@@ -234,7 +242,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.auto_awesome,
                           color: AppColors.primary,
                           size: AppDimensions.iconS,
@@ -242,10 +250,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                         const SizedBox(width: AppDimensions.spacing8),
                         Text(
                           '${_profiles.length} faithful hearts nearby',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                       ],
                     ),
@@ -258,8 +267,6 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       },
     );
   }
-
-
 
   Widget _buildSwipeView() {
     return Padding(
@@ -353,17 +360,18 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       builder: (context, child) {
         return ListView.builder(
           controller: _scrollController,
-          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingL),
+          padding:
+              const EdgeInsets.symmetric(horizontal: AppDimensions.paddingL),
           itemCount: _profiles.length,
           itemBuilder: (context, index) {
             final profile = _profiles[index];
             final animationDelay = index * 0.1;
             final isLiked = _likedProfiles.contains(profile.id);
             final isPassed = _passedProfiles.contains(profile.id);
-            
+
             return _buildAnimatedProfileCard(
-              profile, 
-              index, 
+              profile,
+              index,
               animationDelay,
               isLiked,
               isPassed,
@@ -375,8 +383,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   }
 
   Widget _buildAnimatedProfileCard(
-    UserProfile profile, 
-    int index, 
+    UserProfile profile,
+    int index,
     double delay,
     bool isLiked,
     bool isPassed,
@@ -436,7 +444,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
           boxShadow: AppColors.cardShadow,
           border: Border.all(
-            color: isLiked 
+            color: isLiked
                 ? AppColors.success.withOpacity(0.3)
                 : isPassed
                     ? AppColors.error.withOpacity(0.3)
@@ -459,9 +467,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     return Container(
       height: 300,
       width: double.infinity,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.lightGray,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           topLeft: Radius.circular(AppDimensions.radiusXL),
           topRight: Radius.circular(AppDimensions.radiusXL),
         ),
@@ -528,10 +536,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                     Expanded(
                       child: Text(
                         '${profile.fullName}, ${profile.age}',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -540,7 +549,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                         padding: const EdgeInsets.all(AppDimensions.paddingXS),
                         decoration: BoxDecoration(
                           color: AppColors.success,
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusS),
                         ),
                         child: const Icon(
                           Icons.verified,
@@ -563,8 +573,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                       child: Text(
                         profile.location,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white70,
-                        ),
+                              color: Colors.white70,
+                            ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -588,15 +598,15 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
             Text(
               profile.bio,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textPrimary,
-                height: 1.4,
-              ),
+                    color: AppColors.textPrimary,
+                    height: 1.4,
+                  ),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: AppDimensions.spacing16),
           ],
-          
+
           // Faith info
           Container(
             padding: const EdgeInsets.all(AppDimensions.paddingM),
@@ -612,7 +622,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
               children: [
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.church,
                       color: AppColors.primary,
                       size: AppDimensions.iconS,
@@ -622,9 +632,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                       child: Text(
                         profile.denomination,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                     ),
                   ],
@@ -634,16 +644,16 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                   Text(
                     'Attends church ${profile.churchAttendance.toLowerCase()}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                          color: AppColors.textSecondary,
+                        ),
                   ),
                 ],
               ],
             ),
           ),
-          
+
           const SizedBox(height: AppDimensions.spacing16),
-          
+
           // Interests
           if (profile.interests.isNotEmpty) ...[
             Wrap(
@@ -663,9 +673,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                   child: Text(
                     interest,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                 );
               }).toList(),
@@ -675,6 +685,4 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       ),
     );
   }
-
-
-} 
+}
