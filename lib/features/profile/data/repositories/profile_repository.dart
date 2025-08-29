@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../models/profile_data.dart';
+import '../../../../core/services/location_service.dart';
 import '../../../../core/services/image_upload_service.dart';
 
 /// Repository for managing user profiles with optimized Firestore operations

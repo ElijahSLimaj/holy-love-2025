@@ -481,17 +481,33 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
         _selectedLocation!.longitude,
       );
     } else {
-      // Fallback: parse from text input
-      final locationParts =
-          _locationController.text.split(',').map((e) => e.trim()).toList();
+      // Fallback: try to geocode from text input
+      final locationText = _locationController.text.trim();
+      final locationParts = locationText.split(',').map((e) => e.trim()).toList();
       locationCity = locationParts.isNotEmpty ? locationParts[0] : '';
       locationState = locationParts.length > 1 ? locationParts[1] : '';
       locationCountry = locationParts.length > 2 ? locationParts[2] : '';
-      geoLocation = null;
+      
+      // Try to get coordinates for the location
+      try {
+        final locationService = LocationService.instance;
+        final coordinates = await locationService.getCoordinatesForLocation(locationText);
+        if (coordinates != null) {
+          geoLocation = GeoPoint(coordinates['lat']!, coordinates['lng']!);
+          debugPrint('Geocoded coordinates for "$locationText": ${coordinates['lat']}, ${coordinates['lng']}');
+        } else {
+          geoLocation = null;
+          debugPrint('No coordinates found for location: $locationText');
+        }
+      } catch (e) {
+        debugPrint('Error geocoding location: $e');
+        geoLocation = null;
+      }
     }
 
     // Save to Firestore via bloc
-    context.read<ProfileCreationBloc>().add(
+    if (mounted) {
+      context.read<ProfileCreationBloc>().add(
           SaveBasicInfoRequested(
             firstName: _firstNameController.text.trim(),
             lastName: _lastNameController.text.trim(),
@@ -503,5 +519,6 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
             locationCountry: locationCountry.isNotEmpty ? locationCountry : null,
           ),
         );
+    }
   }
 }

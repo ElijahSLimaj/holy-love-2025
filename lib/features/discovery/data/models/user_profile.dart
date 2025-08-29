@@ -4,6 +4,8 @@ class UserProfile {
   final String lastName;
   final int age;
   final String location;
+  final double? latitude;
+  final double? longitude;
   final List<String> photoUrls;
   final String bio;
   final String denomination;
@@ -31,6 +33,8 @@ class UserProfile {
     required this.lastName,
     required this.age,
     required this.location,
+    this.latitude,
+    this.longitude,
     required this.photoUrls,
     required this.bio,
     required this.denomination,

@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/user_profile.dart';
-import '../../data/mock_users.dart';
+import '../../data/services/matching_service.dart';
+import '../../data/services/interaction_service.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../widgets/swipeable_card_stack.dart';
+import '../widgets/discovery_empty_state.dart';
 import 'member_profile_screen.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 
 enum ViewMode { list, swipe }
 
@@ -34,11 +38,24 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   final Set<String> _likedProfiles = {};
   final Set<String> _passedProfiles = {};
   final GlobalKey<SwipeableCardStackState> _cardStackKey = GlobalKey();
+  
+  // Matching services
+  late MatchingService _matchingService;
+  late InteractionService _interactionService;
+  
+  bool _isLoading = true;
+  String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
-    _profiles = MockUsers.getDiscoveryProfiles();
+    
+    // Initialize services
+    _matchingService = MatchingService();
+    _interactionService = InteractionService();
+    
+    // Initialize with empty profiles
+    _profiles = [];
 
     _listAnimationController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -66,7 +83,55 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       curve: Curves.easeOutBack,
     ));
 
+    // Load real matches
+    _loadMatches();
     _startAnimations();
+  }
+
+  /// Load potential matches using the matching service
+  Future<void> _loadMatches() async {
+    try {
+      // Get current user ID
+      final authState = context.read<AuthBloc>().state;
+      if (authState.status != AuthStatus.authenticated) {
+        debugPrint('User not authenticated');
+        // No fallback to mock data - show empty state
+        if (mounted) {
+          setState(() {
+            _profiles = [];
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      _currentUserId = authState.user.id;
+      debugPrint('Loading matches for user: $_currentUserId');
+
+      // Find potential matches
+      final matches = await _matchingService.findMatches(
+        currentUserId: _currentUserId!,
+        limit: 20,
+      );
+
+      debugPrint('Found ${matches.length} potential matches');
+
+      if (mounted) {
+        setState(() {
+          _profiles = matches; // Use real matches only, even if empty
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading matches: $e');
+      // Show empty state on error - no mock data fallback
+      if (mounted) {
+        setState(() {
+          _profiles = [];
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _startAnimations() {
@@ -101,20 +166,44 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     super.dispose();
   }
 
-  void _onLike(UserProfile profile) {
+  void _onLike(UserProfile profile) async {
     HapticFeedback.lightImpact();
     setState(() {
       _likedProfiles.add(profile.id);
     });
-    // TODO: Implement like logic
+    
+    if (_currentUserId != null) {
+      try {
+        final isMatch = await _interactionService.likeUser(
+          currentUserId: _currentUserId!,
+          targetUserId: profile.id,
+        );
+        
+        if (isMatch && mounted) {
+          _showMatchDialog(profile);
+        }
+      } catch (e) {
+        debugPrint('Error recording like: $e');
+      }
+    }
   }
 
-  void _onPass(UserProfile profile) {
+  void _onPass(UserProfile profile) async {
     HapticFeedback.selectionClick();
     setState(() {
       _passedProfiles.add(profile.id);
     });
-    // TODO: Implement pass logic
+    
+    if (_currentUserId != null) {
+      try {
+        await _interactionService.passUser(
+          currentUserId: _currentUserId!,
+          targetUserId: profile.id,
+        );
+      } catch (e) {
+        debugPrint('Error recording pass: $e');
+      }
+    }
   }
 
   void _onProfileTap(UserProfile profile) {
@@ -144,8 +233,76 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
+  /// Show match celebration dialog
+  void _showMatchDialog(UserProfile profile) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.favorite,
+              color: AppColors.secondary,
+              size: 64,
+            ),
+            const SizedBox(height: AppDimensions.spacing16),
+            Text(
+              'It\'s a Match!',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+            ),
+            const SizedBox(height: AppDimensions.spacing8),
+            Text(
+              'You and ${profile.firstName} liked each other!',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppDimensions.spacing24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Keep Swiping'),
+                  ),
+                ),
+                const SizedBox(width: AppDimensions.spacing12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      // TODO: Navigate to chat
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.secondary,
+                    ),
+                    child: const Text('Send Message'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _onStackEmpty() {
-    // TODO: Load more profiles or show empty state
+    // When stack is empty, set profiles to empty to trigger empty state
+    if (mounted) {
+      setState(() {
+        _profiles = [];
+      });
+    }
   }
 
   @override
@@ -153,16 +310,40 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: widget.viewMode == ViewMode.list
-                  ? _buildProfileList()
-                  : _buildSwipeView(),
-            ),
-          ],
-        ),
+        child: _isLoading
+            ? const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    ),
+                    SizedBox(height: AppDimensions.spacing16),
+                    Text(
+                      'Finding your perfect matches...',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : _profiles.isEmpty
+                ? DiscoveryEmptyState(
+                    onRefresh: _loadMatches,
+                    isSwipeMode: widget.viewMode == ViewMode.swipe,
+                  )
+                : Column(
+                    children: [
+                      _buildHeader(),
+                      Expanded(
+                        child: widget.viewMode == ViewMode.list
+                            ? _buildProfileList()
+                            : _buildSwipeView(),
+                      ),
+                    ],
+                  ),
       ),
     );
   }

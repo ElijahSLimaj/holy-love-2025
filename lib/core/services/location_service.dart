@@ -4,6 +4,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'geo_service.dart';
 
 /// Service for handling location-related operations
 class LocationService {
@@ -215,6 +216,89 @@ class LocationService {
     }
     
     return parts.join(', ');
+  }
+
+  /// Get coordinates for a location name
+  /// Returns {lat, lng} or null if not found
+  Future<Map<String, double>?> getCoordinatesForLocation(String locationName) async {
+    try {
+      debugPrint('Getting coordinates for location: $locationName');
+      
+      // First try our approximate coordinates lookup
+      final approximateCoords = GeoService.getApproximateCoordinates(locationName);
+      if (approximateCoords != null) {
+        debugPrint('Found approximate coordinates: $approximateCoords');
+        return approximateCoords;
+      }
+
+      // Try Mapbox Geocoding API if token is available
+      if (_mapboxToken != null && _mapboxToken!.isNotEmpty) {
+        final coordinates = await _geocodeWithMapbox(locationName);
+        if (coordinates != null) {
+          debugPrint('Found Mapbox coordinates: $coordinates');
+          return coordinates;
+        }
+      }
+
+      // Try native geocoding as fallback
+      try {
+        final locations = await locationFromAddress(locationName);
+        if (locations.isNotEmpty) {
+          final location = locations.first;
+          final coordinates = {
+            'lat': location.latitude,
+            'lng': location.longitude,
+          };
+          debugPrint('Found native geocoding coordinates: $coordinates');
+          return coordinates;
+        }
+      } catch (e) {
+        debugPrint('Native geocoding failed: $e');
+      }
+
+      debugPrint('No coordinates found for location: $locationName');
+      return null;
+    } catch (e) {
+      debugPrint('Error getting coordinates for location: $e');
+      return null;
+    }
+  }
+
+  /// Geocode using Mapbox API
+  Future<Map<String, double>?> _geocodeWithMapbox(String locationName) async {
+    try {
+      final encodedQuery = Uri.encodeComponent(locationName);
+      final url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/$encodedQuery.json?access_token=$_mapboxToken&limit=1';
+      
+      final response = await http.get(Uri.parse(url));
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final features = data['features'] as List?;
+        
+        if (features != null && features.isNotEmpty) {
+          final feature = features.first;
+          final coordinates = feature['center'] as List?;
+          
+          if (coordinates != null && coordinates.length >= 2) {
+            return {
+              'lat': coordinates[1].toDouble(), // Mapbox returns [lng, lat]
+              'lng': coordinates[0].toDouble(),
+            };
+          }
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      debugPrint('Mapbox geocoding error: $e');
+      return null;
+    }
+  }
+
+  /// Validate if coordinates are reasonable
+  bool areCoordinatesValid(double? lat, double? lng) {
+    return GeoService.areCoordinatesValid(lat, lng);
   }
 }
 

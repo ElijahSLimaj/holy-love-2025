@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../../../core/services/image_upload_service.dart';
+import '../../../../core/services/location_service.dart';
 
 part 'profile_creation_event.dart';
 part 'profile_creation_state.dart';
