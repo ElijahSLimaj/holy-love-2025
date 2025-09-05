@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import 'sign_in_screen.dart';
-import 'profile_creation_screen.dart';
+import '../bloc/auth_bloc.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -117,7 +118,17 @@ class _SignUpScreenState extends State<SignUpScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state.status == AuthStatus.authenticated) {
+          setState(() => _isLoading = false);
+          // Navigation is handled by the main app navigator
+        } else if (state.status == AuthStatus.unauthenticated && state.errorMessage != null) {
+          setState(() => _isLoading = false);
+          _showErrorMessage(state.errorMessage!);
+        }
+      },
+      child: Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -168,6 +179,7 @@ class _SignUpScreenState extends State<SignUpScreen>
           ),
         ),
       ),
+    ),
     );
   }
 
@@ -479,12 +491,12 @@ class _SignUpScreenState extends State<SignUpScreen>
 
     setState(() => _isLoading = true);
 
-    // TODO: Implement actual sign up logic
-    await Future.delayed(const Duration(seconds: 2));
-
+    // Sign up with email and password via AuthBloc
     if (mounted) {
-      setState(() => _isLoading = false);
-      _showSuccessAndNavigate();
+      context.read<AuthBloc>().add(AuthSignUpWithEmailRequested(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      ));
     }
   }
 
@@ -493,24 +505,16 @@ class _SignUpScreenState extends State<SignUpScreen>
     HapticFeedback.mediumImpact();
   }
 
-  void _showSuccessAndNavigate() {
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const ProfileCreationScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(1.0, 0.0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
-            child: child,
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 500),
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+        ),
+        duration: const Duration(seconds: 4),
       ),
     );
   }

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../shared/widgets/custom_button.dart';
-import '../../../discovery/data/mock_users.dart';
+import '../../../profile/data/repositories/profile_repository.dart';
+import '../../../../core/services/image_upload_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -23,6 +27,14 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   late Animation<double> _sectionFadeAnimation;
 
   late ScrollController _scrollController;
+  final _profileRepository = ProfileRepository();
+
+  // Photos
+  final int _maxPhotos = 6;
+  List<String> _photoUrls = [];
+  List<String> _thumbnailUrls = [];
+  Map<int, double> _uploadProgress = {};
+  bool _isSavingPhotos = false;
 
   // Form controllers
   final _bioController = TextEditingController();
@@ -59,6 +71,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
   final List<String> _churchAttendanceOptions = [
     'Weekly',
+    'Bi-weekly',
     'Monthly',
     'Occasionally',
     'Holidays only',
@@ -162,26 +175,55 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     });
   }
 
-  void _loadCurrentProfile() {
-    // Load current user profile data - in real app this would come from state management
-    final currentProfile = MockUsers.sampleProfiles.first;
+  Future<void> _loadCurrentProfile() async {
+    try {
+      final userId = _profileRepository.currentUserId;
+      if (userId == null) return;
 
-    _bioController.text = currentProfile.bio;
-    _occupationController.text = currentProfile.occupation;
-    _educationController.text = currentProfile.education;
-    _heightController.text = currentProfile.height;
-    _favoriteVerseController.text = currentProfile.favoriteVerse;
-    _faithStoryController.text = currentProfile.faithStory;
+      final details = await _profileRepository.getProfileDetails(userId);
 
-    _selectedInterests = List.from(currentProfile.interests);
-    _selectedDenomination = currentProfile.denomination;
-    _selectedChurchAttendance = currentProfile.churchAttendance;
-    _selectedRelationshipGoal = currentProfile.relationshipGoal;
-    _hasChildren = currentProfile.hasChildren;
-    _wantsChildren = currentProfile.wantsChildren;
-    _drinks = currentProfile.drinks;
-    _smokes = currentProfile.smokes;
-    _selectedLanguages = List.from(currentProfile.languages);
+      if (details != null) {
+        // Handle case-insensitive relationship goal matching
+        final rawRelationshipGoal = details.relationshipGoal ?? '';
+        _selectedRelationshipGoal = _relationshipGoalOptions.firstWhere(
+          (option) => option.toLowerCase() == rawRelationshipGoal.toLowerCase(),
+          orElse: () => rawRelationshipGoal,
+        );
+        _bioController.text = details.bio ?? '';
+        _occupationController.text = details.occupation ?? '';
+        _educationController.text = details.education ?? '';
+        _heightController.text = details.height ?? '';
+        _favoriteVerseController.text = details.favoriteBibleVerse ?? '';
+        _faithStoryController.text = details.faithStory ?? '';
+
+        _selectedInterests = List.from(details.interests);
+        
+        // Handle case-insensitive denomination matching
+        final rawDenomination = details.denomination ?? '';
+        _selectedDenomination = _denominationOptions.firstWhere(
+          (option) => option.toLowerCase() == rawDenomination.toLowerCase(),
+          orElse: () => rawDenomination,
+        );
+        
+        // Handle case-insensitive church attendance matching with variations
+        final rawChurchAttendance = details.churchAttendance ?? '';
+        _selectedChurchAttendance = _churchAttendanceOptions.firstWhere(
+          (option) => _normalizeString(option) == _normalizeString(rawChurchAttendance),
+          orElse: () => rawChurchAttendance,
+        );
+        _hasChildren = details.hasChildren ?? false;
+        _wantsChildren = details.wantsChildren ?? false;
+        _drinks = details.drinks ?? false;
+        _smokes = details.smokes ?? false;
+        _selectedLanguages = List.from(details.languages);
+
+        _photoUrls = List<String>.from(details.photoUrls ?? []);
+        _thumbnailUrls = List<String>.from(details.thumbnailUrls ?? []);
+        if (mounted) setState(() {});
+      }
+    } catch (e) {
+      // Fallback: keep defaults if load fails
+    }
   }
 
   void _saveProfile() {
@@ -347,58 +389,336 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       title: 'Photos',
       icon: Icons.photo_camera_outlined,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 120,
-            decoration: BoxDecoration(
-              color: AppColors.lightGray.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-              border: Border.all(
-                color: AppColors.lightGray.withOpacity(0.5),
-                style: BorderStyle.solid,
-                width: 2,
-              ),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: AppDimensions.spacing12,
+              mainAxisSpacing: AppDimensions.spacing12,
+              childAspectRatio: 0.75,
             ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppDimensions.spacing12),
-                    decoration: BoxDecoration(
-                      gradient: AppColors.loveGradient,
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusS),
-                    ),
-                    child: const Icon(
-                      Icons.add_a_photo,
-                      color: AppColors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(height: AppDimensions.spacing8),
-                  Text(
-                    'Add Photos',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
+            itemCount: _maxPhotos,
+            itemBuilder: (context, index) {
+              final hasPhoto = index < _photoUrls.length;
+              return GestureDetector(
+                onTap: () => _showPhotoOptions(index, hasPhoto),
+                child: Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.lightGray,
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusM),
+                        border: Border.all(
+                          color: AppColors.border,
+                          width: hasPhoto ? 0 : 2,
+                          style: hasPhoto ? BorderStyle.none : BorderStyle.solid,
                         ),
-                  ),
-                ],
-              ),
-            ),
+                      ),
+                      child: hasPhoto
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                              child: CachedNetworkImage(
+                                imageUrl: _photoUrls[index],
+                                fit: BoxFit.cover,
+                                placeholder: (c, _) => const Center(
+                                  child: CircularProgressIndicator(
+                                    color: AppColors.primary,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                                errorWidget: (c, _, __) => const Icon(Icons.broken_image),
+                              ),
+                            )
+                          : Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(AppDimensions.spacing12),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.add_a_photo_outlined,
+                                      color: AppColors.primary,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppDimensions.spacing8),
+                                  Text(
+                                    index == 0 ? 'Main Photo' : 'Add Photo',
+                                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                          color: AppColors.textSecondary,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                    ),
+                    if (index == 0 && hasPhoto)
+                      Positioned(
+                        top: AppDimensions.spacing8,
+                        left: AppDimensions.spacing8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.spacing8,
+                            vertical: AppDimensions.spacing4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.star, color: Colors.white, size: 12),
+                              const SizedBox(width: AppDimensions.spacing4),
+                              Text(
+                                'Main',
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    if (_uploadProgress[index] != null)
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                            color: Colors.black.withOpacity(0.7),
+                          ),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 40,
+                                  height: 40,
+                                  child: CircularProgressIndicator(
+                                    value: _uploadProgress[index],
+                                    color: AppColors.white,
+                                    strokeWidth: 3,
+                                  ),
+                                ),
+                                const SizedBox(height: AppDimensions.spacing8),
+                                Text(
+                                  '${((_uploadProgress[index]!)*100).toInt()}%',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
           ),
           const SizedBox(height: AppDimensions.spacing12),
-          Text(
-            'Add up to 6 photos to showcase your personality',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
+          if (_isSavingPhotos)
+            Row(
+              children: [
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                 ),
-            textAlign: TextAlign.center,
-          ),
+                const SizedBox(width: AppDimensions.spacing8),
+                Text(
+                  'Saving photos...',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
         ],
       ),
     );
+  }
+
+  void _showPhotoOptions(int index, bool hasPhoto) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(AppDimensions.radiusL),
+            topRight: Radius.circular(AppDimensions.radiusL),
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: AppDimensions.spacing8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: AppDimensions.spacing24),
+              if (hasPhoto && index != 0)
+                ListTile(
+                  leading: const Icon(Icons.star_outline, color: AppColors.primary),
+                  title: const Text('Set as main photo'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _makeMainPhoto(index);
+                  },
+                ),
+              ListTile(
+                leading: const Icon(Icons.add_a_photo_outlined, color: AppColors.primary),
+                title: Text(hasPhoto ? 'Replace photo' : 'Add photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAndUploadPhoto(index);
+                },
+              ),
+              if (hasPhoto)
+                ListTile(
+                  leading: const Icon(Icons.delete_outline, color: AppColors.error),
+                  title: const Text('Remove photo'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _removePhoto(index);
+                  },
+                ),
+              const SizedBox(height: AppDimensions.spacing16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAndUploadPhoto(int index) async {
+    try {
+      final userId = _profileRepository.currentUserId;
+      if (userId == null) return;
+
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: ImageSource.gallery);
+      if (picked == null) return;
+
+      setState(() {
+        _uploadProgress[index] = 0.0;
+      });
+
+      final result = await ImageUploadService.uploadProfileImage(
+        File(picked.path),
+        userId,
+        customFileName: 'profile_${index + 1}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        onProgress: (p) {
+          setState(() {
+            _uploadProgress[index] = p;
+          });
+        },
+      );
+
+      if (result != null) {
+        if (index < _photoUrls.length) {
+          _photoUrls[index] = result.originalUrl;
+          if (index < _thumbnailUrls.length) {
+            _thumbnailUrls[index] = result.thumbnailUrl;
+          } else {
+            _thumbnailUrls.add(result.thumbnailUrl);
+          }
+        } else {
+          _photoUrls.add(result.originalUrl);
+          _thumbnailUrls.add(result.thumbnailUrl);
+        }
+        await _savePhotosToRepo();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Failed to upload photo'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+          ),
+        ),
+      );
+    } finally {
+      setState(() {
+        _uploadProgress.removeWhere((key, value) => key >= 0);
+      });
+    }
+  }
+
+  Future<void> _savePhotosToRepo() async {
+    try {
+      final userId = _profileRepository.currentUserId;
+      if (userId == null) return;
+      setState(() {
+        _isSavingPhotos = true;
+      });
+      final mainPhotoUrl = _photoUrls.isNotEmpty ? _photoUrls.first : null;
+      final mainThumbnailUrl = _thumbnailUrls.isNotEmpty ? _thumbnailUrls.first : null;
+      await _profileRepository.savePhotos(
+        userId: userId,
+        photoUrls: _photoUrls,
+        thumbnailUrls: _thumbnailUrls,
+        mainPhotoUrl: mainPhotoUrl,
+        mainThumbnailUrl: mainThumbnailUrl,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingPhotos = false;
+        });
+      }
+    }
+  }
+
+  void _makeMainPhoto(int index) async {
+    if (index <= 0 || index >= _photoUrls.length) return;
+    setState(() {
+      final tmpUrl = _photoUrls[0];
+      _photoUrls[0] = _photoUrls[index];
+      _photoUrls[index] = tmpUrl;
+      if (_thumbnailUrls.length == _photoUrls.length) {
+        final tmpThumb = _thumbnailUrls[0];
+        _thumbnailUrls[0] = _thumbnailUrls[index];
+        _thumbnailUrls[index] = tmpThumb;
+      }
+    });
+    await _savePhotosToRepo();
+  }
+
+  void _removePhoto(int index) async {
+    if (index < 0 || index >= _photoUrls.length) return;
+    setState(() {
+      _photoUrls.removeAt(index);
+      if (index < _thumbnailUrls.length) {
+        _thumbnailUrls.removeAt(index);
+      }
+    });
+    await _savePhotosToRepo();
+  }
+
+  /// Normalize strings for comparison (lowercase, remove hyphens/spaces)
+  String _normalizeString(String str) {
+    return str.toLowerCase().replaceAll(RegExp(r'[-\s]'), '');
   }
 
   Widget _buildBasicInfoSection() {

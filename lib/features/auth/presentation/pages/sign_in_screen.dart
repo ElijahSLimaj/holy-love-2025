@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import 'sign_up_screen.dart';
+import '../bloc/auth_bloc.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -110,7 +112,17 @@ class _SignInScreenState extends State<SignInScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state.status == AuthStatus.authenticated) {
+          setState(() => _isLoading = false);
+          // Navigation is handled by the main app navigator
+        } else if (state.status == AuthStatus.unauthenticated && state.errorMessage != null) {
+          setState(() => _isLoading = false);
+          _showErrorMessage(state.errorMessage!);
+        }
+      },
+      child: Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -166,6 +178,7 @@ class _SignInScreenState extends State<SignInScreen>
           ),
         ),
       ),
+    ),
     );
   }
 
@@ -465,12 +478,12 @@ class _SignInScreenState extends State<SignInScreen>
 
     setState(() => _isLoading = true);
 
-    // TODO: Implement actual sign in logic
-    await Future.delayed(const Duration(seconds: 2));
-
+    // Sign in with email and password via AuthBloc
     if (mounted) {
-      setState(() => _isLoading = false);
-      _showSuccessAndNavigate();
+      context.read<AuthBloc>().add(AuthSignInWithEmailRequested(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      ));
     }
   }
 
@@ -493,16 +506,16 @@ class _SignInScreenState extends State<SignInScreen>
     HapticFeedback.mediumImpact();
   }
 
-  void _showSuccessAndNavigate() {
-    // TODO: Navigate to main app
+  void _showErrorMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Welcome back!'),
-        backgroundColor: AppColors.success,
+        content: Text(message),
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusM),
         ),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
