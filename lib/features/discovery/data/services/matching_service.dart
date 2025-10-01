@@ -45,11 +45,12 @@ class MatchingService {
       
       debugPrint('Found ${rankedMatches.length} real matches');
       
-      // Return only real matches - no mock data fallback
+      // Return only real matches from database
       return rankedMatches.take(limit).toList();
       
     } catch (e) {
       debugPrint('Error finding matches: $e');
+      // Return empty list on error - no mock data fallback
       return [];
     }
   }

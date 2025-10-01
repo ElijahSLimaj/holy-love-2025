@@ -561,6 +561,24 @@ class _ProfileScreenState extends State<ProfileScreen>
 
           const SizedBox(height: AppDimensions.spacing32),
 
+          // Preferences Section
+          if (_profileDetails?.preferences != null)
+            AnimatedBuilder(
+              animation: _cardAnimations[2],
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _cardAnimations[2].value,
+                  child: Opacity(
+                    opacity: _cardAnimations[2].value.clamp(0.0, 1.0),
+                    child: _buildPreferencesCard(),
+                  ),
+                );
+              },
+            ),
+
+          if (_profileDetails?.preferences != null)
+            const SizedBox(height: AppDimensions.spacing32),
+
           // Settings Section
           Text(
             AppStrings.settings,
@@ -748,5 +766,242 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       ),
     );
+  }
+
+  Widget _buildPreferencesCard() {
+    final preferences = _profileDetails?.preferences ?? {};
+    
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.paddingL),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppDimensions.spacing8),
+                decoration: const BoxDecoration(
+                  gradient: AppColors.loveGradient,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.tune,
+                  color: AppColors.white,
+                  size: AppDimensions.iconS,
+                ),
+              ),
+              const SizedBox(width: AppDimensions.spacing12),
+              Expanded(
+                child: Text(
+                  'My Preferences',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: AppDimensions.spacing20),
+          
+          // Age Range
+          if (preferences['ageRangeMin'] != null && preferences['ageRangeMax'] != null)
+            _buildPreferenceItem(
+              icon: Icons.cake,
+              label: 'Age Range',
+              value: '${preferences['ageRangeMin']} - ${preferences['ageRangeMax']} years',
+              color: AppColors.primary,
+            ),
+          
+          // Distance
+          if (preferences['maxDistance'] != null)
+            _buildPreferenceItem(
+              icon: Icons.location_on,
+              label: 'Max Distance',
+              value: preferences['maxDistance'] == 100 
+                  ? 'Anywhere' 
+                  : '${preferences['maxDistance']} miles',
+              color: AppColors.accent,
+            ),
+          
+          // Faith Importance
+          if (preferences['faithImportance'] != null)
+            _buildPreferenceItem(
+              icon: Icons.favorite,
+              label: 'Faith Compatibility',
+              value: _formatFaithImportance(preferences['faithImportance']),
+              color: AppColors.secondary,
+            ),
+          
+          // Deal Breakers
+          if (preferences['dealBreakers'] != null && 
+              (preferences['dealBreakers'] as List).isNotEmpty)
+            _buildDealBreakersItem(preferences['dealBreakers'] as List<dynamic>),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreferenceItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppDimensions.spacing16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppDimensions.spacing8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: AppDimensions.iconS,
+            ),
+          ),
+          const SizedBox(width: AppDimensions.spacing12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+                const SizedBox(height: AppDimensions.spacing2),
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDealBreakersItem(List<dynamic> dealBreakers) {
+    if (dealBreakers.isEmpty) return const SizedBox.shrink();
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppDimensions.spacing16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppDimensions.spacing8),
+            decoration: BoxDecoration(
+              color: AppColors.error.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.block,
+              color: AppColors.error,
+              size: AppDimensions.iconS,
+            ),
+          ),
+          const SizedBox(width: AppDimensions.spacing12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Deal Breakers',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+                const SizedBox(height: AppDimensions.spacing8),
+                Wrap(
+                  spacing: AppDimensions.spacing8,
+                  runSpacing: AppDimensions.spacing4,
+                  children: dealBreakers.map((dealBreaker) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.spacing8,
+                        vertical: AppDimensions.spacing4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                        border: Border.all(
+                          color: AppColors.error.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        _formatDealBreaker(dealBreaker.toString()),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.error,
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatFaithImportance(String faithImportance) {
+    switch (faithImportance) {
+      case 'very_important':
+        return 'Very Important';
+      case 'important':
+        return 'Important';
+      case 'somewhat_important':
+        return 'Somewhat Important';
+      case 'open_minded':
+        return 'Open-minded';
+      default:
+        return faithImportance;
+    }
+  }
+
+  String _formatDealBreaker(String dealBreaker) {
+    switch (dealBreaker) {
+      case 'smoking':
+        return 'Smoking';
+      case 'drinking':
+        return 'Heavy Drinking';
+      case 'different_faith':
+        return 'Different Faith';
+      case 'no_kids':
+        return 'Doesn\'t Want Kids';
+      case 'long_distance':
+        return 'Long Distance';
+      case 'party_lifestyle':
+        return 'Party Lifestyle';
+      default:
+        return dealBreaker;
+    }
   }
 }

@@ -405,41 +405,6 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppDimensions.spacing16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.paddingM,
-                      vertical: AppDimensions.paddingS,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: AppColors.loveGradient.scale(0.1),
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusL),
-                      border: Border.all(
-                        color: AppColors.primary.withOpacity(0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.auto_awesome,
-                          color: AppColors.primary,
-                          size: AppDimensions.iconS,
-                        ),
-                        const SizedBox(width: AppDimensions.spacing8),
-                        Text(
-                          '${_profiles.length} faithful hearts nearby',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),

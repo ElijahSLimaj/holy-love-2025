@@ -55,6 +55,13 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   bool _smokes = false;
   List<String> _selectedLanguages = [];
 
+  // Preferences data
+  int _ageRangeMin = 22;
+  int _ageRangeMax = 35;
+  int _maxDistance = 25;
+  String _faithImportance = '';
+  List<String> _dealBreakers = [];
+
   // Options
   final List<String> _denominationOptions = [
     'Catholic',
@@ -219,6 +226,17 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
         _photoUrls = List<String>.from(details.photoUrls ?? []);
         _thumbnailUrls = List<String>.from(details.thumbnailUrls ?? []);
+
+        // Load preferences data
+        if (details.preferences != null) {
+          final prefs = details.preferences!;
+          _ageRangeMin = prefs['ageRangeMin'] ?? 22;
+          _ageRangeMax = prefs['ageRangeMax'] ?? 35;
+          _maxDistance = prefs['maxDistance'] ?? 25;
+          _faithImportance = prefs['faithImportance'] ?? '';
+          _dealBreakers = List<String>.from(prefs['dealBreakers'] ?? []);
+        }
+
         if (mounted) setState(() {});
       }
     } catch (e) {
@@ -302,6 +320,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                               _buildLifestyleSection(),
                               const SizedBox(height: AppDimensions.spacing32),
                               _buildLanguagesSection(),
+                              const SizedBox(height: AppDimensions.spacing32),
+                              _buildPreferencesSection(),
                               const SizedBox(height: 100), // Bottom padding
                             ],
                           ),
@@ -1235,6 +1255,132 @@ class _EditProfileScreenState extends State<EditProfileScreen>
               variant: ButtonVariant.gradient,
               size: ButtonSize.large,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreferencesSection() {
+    return _buildSection(
+      title: 'Matching Preferences',
+      icon: Icons.tune,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Age Range
+          Text(
+            'Age Range: $_ageRangeMin - $_ageRangeMax years',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
+                ),
+          ),
+          const SizedBox(height: AppDimensions.spacing8),
+          RangeSlider(
+            values: RangeValues(_ageRangeMin.toDouble(), _ageRangeMax.toDouble()),
+            min: 18,
+            max: 65,
+            divisions: 47,
+            activeColor: AppColors.primary,
+            onChanged: (RangeValues values) {
+              setState(() {
+                _ageRangeMin = values.start.round();
+                _ageRangeMax = values.end.round();
+              });
+            },
+          ),
+          
+          const SizedBox(height: AppDimensions.spacing16),
+          
+          // Max Distance
+          Text(
+            'Max Distance: ${_maxDistance == 100 ? "Anywhere" : "$_maxDistance miles"}',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
+                ),
+          ),
+          const SizedBox(height: AppDimensions.spacing8),
+          Slider(
+            value: _maxDistance.toDouble(),
+            min: 5,
+            max: 100,
+            divisions: 19,
+            activeColor: AppColors.accent,
+            onChanged: (double value) {
+              setState(() {
+                _maxDistance = value.round();
+              });
+            },
+          ),
+          
+          const SizedBox(height: AppDimensions.spacing16),
+          
+          // Faith Importance
+          _buildDropdown(
+            label: 'Faith Compatibility',
+            value: _faithImportance,
+            options: ['Very Important', 'Important', 'Somewhat Important', 'Open-minded'],
+            onChanged: (value) {
+              setState(() {
+                _faithImportance = value ?? '';
+              });
+            },
+          ),
+          
+          const SizedBox(height: AppDimensions.spacing16),
+          
+          // Deal Breakers
+          Text(
+            'Deal Breakers',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
+                ),
+          ),
+          const SizedBox(height: AppDimensions.spacing8),
+          Wrap(
+            spacing: AppDimensions.spacing8,
+            runSpacing: AppDimensions.spacing8,
+            children: ['Smoking', 'Heavy Drinking', 'Different Faith', 'Doesn\'t Want Kids', 'Long Distance', 'Party Lifestyle'].map((dealBreaker) {
+              final isSelected = _dealBreakers.contains(dealBreaker.toLowerCase().replaceAll(' ', '_').replaceAll('\'', ''));
+              return GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() {
+                    final key = dealBreaker.toLowerCase().replaceAll(' ', '_').replaceAll('\'', '');
+                    if (isSelected) {
+                      _dealBreakers.remove(key);
+                    } else {
+                      _dealBreakers.add(key);
+                    }
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.paddingM,
+                    vertical: AppDimensions.spacing8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.error : AppColors.lightGray.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                    border: Border.all(
+                      color: isSelected ? AppColors.error : AppColors.lightGray,
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    dealBreaker,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: isSelected ? AppColors.white : AppColors.textPrimary,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        ),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
         ],
       ),

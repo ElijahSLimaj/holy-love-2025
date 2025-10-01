@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../pages/discovery_filters_screen.dart';
 
 /// Beautiful empty state widget for when no profiles are available
 class DiscoveryEmptyState extends StatefulWidget {
@@ -310,7 +312,16 @@ class _DiscoveryEmptyStateState extends State<DiscoveryEmptyState>
     );
   }
 
-  void _navigateToFilters(BuildContext context) {
-    Navigator.of(context).pushNamed('/discovery-filters');
+  void _navigateToFilters(BuildContext context) async {
+    HapticFeedback.lightImpact();
+    
+    // Show filter screen as modal
+    await showModalBottomSheet<FilterCriteria>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: AppColors.primary.withOpacity(0.2),
+      builder: (context) => const DiscoveryFiltersScreen(),
+    );
   }
 }
