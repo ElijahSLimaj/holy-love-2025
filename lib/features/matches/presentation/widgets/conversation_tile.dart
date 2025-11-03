@@ -5,7 +5,7 @@ import '../../../../core/constants/app_dimensions.dart';
 import '../pages/matches_screen.dart';
 
 class ConversationTile extends StatefulWidget {
-  final ConversationData conversation;
+  final DisplayConversationData conversation;
   final VoidCallback onTap;
 
   const ConversationTile({

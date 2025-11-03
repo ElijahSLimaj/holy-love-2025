@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../discovery/data/mock_users.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../discovery/data/models/user_profile.dart';
+import '../../../profile/data/repositories/profile_repository.dart';
+import '../../data/models/conversation_data.dart';
+import '../../data/repositories/message_repository.dart';
 import '../../../matches/presentation/widgets/conversation_tile.dart';
 import '../../../matches/presentation/pages/matches_screen.dart';
 import 'chat_screen.dart';
@@ -24,9 +30,13 @@ class _MessagesScreenState extends State<MessagesScreen>
   late Animation<double> _headerFadeAnimation;
   late Animation<Offset> _headerSlideAnimation;
 
-  // Mock data for conversations
-  List<ConversationData> _conversations = [];
+  final MessageRepository _messageRepository = MessageRepository();
+  final ProfileRepository _profileRepository = ProfileRepository();
+
+  List<ConversationItem> _conversations = [];
   bool _isLoading = true;
+  String? _currentUserId;
+  StreamSubscription<List<ConversationData>>? _conversationsSubscription;
 
   @override
   void initState() {
@@ -77,71 +87,47 @@ class _MessagesScreenState extends State<MessagesScreen>
     ));
   }
 
-  void _loadConversations() {
-    // Load the same conversations as in matches screen plus additional ones
-    final allProfiles = MockUsers.sampleProfiles;
+  Future<void> _loadConversations() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState.status != AuthStatus.authenticated) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
-    _conversations = [
-      ConversationData(
-        user: allProfiles[0],
-        lastMessage:
-            'Hey! Thanks for the match! I love your testimony about serving in children\'s ministry 🙏',
-        timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
-        unreadCount: 2,
-      ),
-      ConversationData(
-        user: allProfiles[1],
-        lastMessage:
-            'That\'s so cool that you\'re into rock climbing too! Have you tried the routes at...',
-        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-        unreadCount: 0,
-      ),
-      ConversationData(
-        user: allProfiles[2],
-        lastMessage:
-            'I saw your photos from the mission trip - that must have been amazing! 💕',
-        timestamp: DateTime.now().subtract(const Duration(hours: 5)),
-        unreadCount: 1,
-      ),
-      ConversationData(
-        user: allProfiles[3],
-        lastMessage:
-            'Would love to hear more about your worship ministry! Maybe we could grab coffee?',
-        timestamp: DateTime.now().subtract(const Duration(days: 1)),
-        unreadCount: 0,
-      ),
-      ConversationData(
-        user: allProfiles[4],
-        lastMessage:
-            'Your favorite verse is so beautiful! It\'s been encouraging me this week ✨',
-        timestamp: DateTime.now().subtract(const Duration(days: 2)),
-        unreadCount: 0,
-      ),
-      ConversationData(
-        user: allProfiles[5],
-        lastMessage:
-            'Hope you\'re having a blessed week! Looking forward to hearing from you 😊',
-        timestamp: DateTime.now().subtract(const Duration(days: 3)),
-        unreadCount: 0,
-      ),
-      ConversationData(
-        user: allProfiles[6],
-        lastMessage:
-            'Thank you for sharing that verse with me. It really spoke to my heart 💖',
-        timestamp: DateTime.now().subtract(const Duration(days: 4)),
-        unreadCount: 3,
-      ),
-      ConversationData(
-        user: allProfiles[7],
-        lastMessage:
-            'I love how passionate you are about your faith! Would love to learn more about your church',
-        timestamp: DateTime.now().subtract(const Duration(days: 5)),
-        unreadCount: 0,
-      ),
-    ];
+    _currentUserId = authState.user.id;
+    if (_currentUserId == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
-    setState(() {
-      _isLoading = false;
+    _conversationsSubscription = _messageRepository
+        .streamUserConversations()
+        .listen((conversations) async {
+      final conversationItems = <ConversationItem>[];
+
+      for (var conversation in conversations) {
+        final otherUserId = conversation.getOtherParticipantId(_currentUserId!);
+        final profile = await _profileRepository.getProfile(otherUserId);
+
+        if (profile != null) {
+          final userProfile = UserProfile.fromProfileData(
+            profile,
+            await _profileRepository.getProfileDetails(otherUserId),
+          );
+
+          conversationItems.add(ConversationItem(
+            conversation: conversation,
+            user: userProfile,
+          ));
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _conversations = conversationItems;
+          _isLoading = false;
+        });
+      }
     });
   }
 
@@ -163,6 +149,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     _fadeController.dispose();
     _headerController.dispose();
     _listController.dispose();
+    _conversationsSubscription?.cancel();
     super.dispose();
   }
 
@@ -204,6 +191,9 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 
   Widget _buildHeader() {
+    final unreadCount = _conversations.where((c) =>
+        c.conversation.getUnreadCount(_currentUserId ?? '') > 0).length;
+
     return AnimatedBuilder(
       animation: _headerController,
       builder: (context, child) {
@@ -264,7 +254,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                               ),
                         ),
                         Text(
-                          '${_conversations.where((c) => c.unreadCount > 0).length} unread • ${_conversations.length} total conversations',
+                          '$unreadCount unread • ${_conversations.length} total conversations',
                           style:
                               Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     color: AppColors.textSecondary,
@@ -290,21 +280,54 @@ class _MessagesScreenState extends State<MessagesScreen>
           opacity: _listController.value.clamp(0.0, 1.0),
           child: Transform.translate(
             offset: Offset(0, 20 * (1 - _listController.value)),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.paddingL),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: AppDimensions.spacing24),
-                  _buildActiveConversations(),
-                  const SizedBox(height: AppDimensions.spacing24),
-                ],
-              ),
-            ),
+            child: _conversations.isEmpty
+                ? _buildEmptyState()
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.paddingL),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: AppDimensions.spacing24),
+                        _buildActiveConversations(),
+                        const SizedBox(height: AppDimensions.spacing24),
+                      ],
+                    ),
+                  ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.chat_bubble_outline,
+            size: 64,
+            color: AppColors.textSecondary.withOpacity(0.5),
+          ),
+          const SizedBox(height: AppDimensions.spacing16),
+          Text(
+            'No conversations yet',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: AppDimensions.spacing8),
+          Text(
+            'Start matching with people to begin conversations',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textTertiary,
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
@@ -351,12 +374,11 @@ class _MessagesScreenState extends State<MessagesScreen>
         const SizedBox(height: AppDimensions.spacing16),
         ..._conversations.asMap().entries.map((entry) {
           final index = entry.key;
-          final conversation = entry.value;
+          final conversationItem = entry.value;
 
           return AnimatedBuilder(
             animation: _listController,
             builder: (context, child) {
-              // Safe animation calculation for conversations
               final delay = index * 0.1;
               final progress = (_listController.value - delay).clamp(0.0, 1.0);
               final animationValue =
@@ -371,9 +393,9 @@ class _MessagesScreenState extends State<MessagesScreen>
                         const EdgeInsets.only(bottom: AppDimensions.spacing8),
                     child: ConversationTile(
                       key: ValueKey(
-                          'messages_conversation_${conversation.user.id}'),
-                      conversation: conversation,
-                      onTap: () => _handleConversationTap(conversation),
+                          'messages_conversation_${conversationItem.user.id}'),
+                      conversation: conversationItem.toDisplayData(_currentUserId ?? ''),
+                      onTap: () => _handleConversationTap(conversationItem),
                     ),
                   ),
                 ),
@@ -385,12 +407,12 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
   }
 
-  void _handleConversationTap(ConversationData conversation) {
+  void _handleConversationTap(ConversationItem conversationItem) {
     HapticFeedback.lightImpact();
     Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            ChatScreen(user: conversation.user),
+            ChatScreen(user: conversationItem.user),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return SlideTransition(
             position: Tween<Offset>(
@@ -405,6 +427,25 @@ class _MessagesScreenState extends State<MessagesScreen>
         },
         transitionDuration: const Duration(milliseconds: 400),
       ),
+    );
+  }
+}
+
+class ConversationItem {
+  final ConversationData conversation;
+  final UserProfile user;
+
+  ConversationItem({
+    required this.conversation,
+    required this.user,
+  });
+
+  DisplayConversationData toDisplayData(String currentUserId) {
+    return DisplayConversationData(
+      user: user,
+      lastMessage: conversation.lastMessage ?? '',
+      timestamp: conversation.lastMessageAt ?? conversation.createdAt,
+      unreadCount: conversation.getUnreadCount(currentUserId),
     );
   }
 }

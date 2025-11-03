@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../discovery/data/models/user_profile.dart';
-import '../../../discovery/data/mock_users.dart';
+import '../../../discovery/data/services/interaction_service.dart';
+import '../../../profile/data/repositories/profile_repository.dart';
+import '../../../messages/data/repositories/message_repository.dart';
+import '../../../messages/data/models/conversation_data.dart';
 import '../widgets/match_card.dart';
 import '../widgets/conversation_tile.dart';
 import '../../../messages/presentation/pages/chat_screen.dart';
@@ -26,16 +32,20 @@ class _MatchesScreenState extends State<MatchesScreen>
   late Animation<double> _headerFadeAnimation;
   late Animation<Offset> _headerSlideAnimation;
 
-  // Mock data - in real app this would come from BLoC/repository
+  final InteractionService _interactionService = InteractionService();
+  final ProfileRepository _profileRepository = ProfileRepository();
+  final MessageRepository _messageRepository = MessageRepository();
+
   List<UserProfile> _newMatches = [];
-  List<ConversationData> _conversations = [];
+  List<ConversationItem> _conversations = [];
   bool _isLoading = true;
+  String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
     _setupAnimations();
-    _loadMockData();
+    _loadData();
     _startAnimations();
   }
 
@@ -80,62 +90,76 @@ class _MatchesScreenState extends State<MatchesScreen>
     ));
   }
 
-  void _loadMockData() {
-    // Load some mock matches and conversations
-    final allProfiles = MockUsers.sampleProfiles;
-    _newMatches = allProfiles.take(4).toList();
+  Future<void> _loadData() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState.status != AuthStatus.authenticated) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
-    _conversations = [
-      ConversationData(
-        user: allProfiles[0],
-        lastMessage:
-            'Hey! Thanks for the match! I love your testimony about serving in children\'s ministry 🙏',
-        timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
-        unreadCount: 2,
-      ),
-      ConversationData(
-        user: allProfiles[1],
-        lastMessage:
-            'That\'s so cool that you\'re into rock climbing too! Have you tried the routes at...',
-        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-        unreadCount: 0,
-      ),
-      ConversationData(
-        user: allProfiles[2],
-        lastMessage:
-            'I saw your photos from the mission trip - that must have been amazing! 💕',
-        timestamp: DateTime.now().subtract(const Duration(hours: 5)),
-        unreadCount: 1,
-      ),
-      ConversationData(
-        user: allProfiles[3],
-        lastMessage:
-            'Would love to hear more about your worship ministry! Maybe we could grab coffee?',
-        timestamp: DateTime.now().subtract(const Duration(days: 1)),
-        unreadCount: 0,
-      ),
-      ConversationData(
-        user: allProfiles[4],
-        lastMessage:
-            'Your favorite verse is so beautiful! It\'s been encouraging me this week ✨',
-        timestamp: DateTime.now().subtract(const Duration(days: 2)),
-        unreadCount: 0,
-      ),
-    ];
+    _currentUserId = authState.user.id;
+    if (_currentUserId == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
-    setState(() {
-      _isLoading = false;
-    });
+    try {
+      final matchedUserIds = await _interactionService.getUserMatches(_currentUserId!);
+      final matchProfiles = <UserProfile>[];
+
+      for (var userId in matchedUserIds.take(10)) {
+        final profile = await _profileRepository.getProfile(userId);
+        if (profile != null) {
+          final userProfile = UserProfile.fromProfileData(
+            profile,
+            await _profileRepository.getProfileDetails(userId),
+          );
+          matchProfiles.add(userProfile);
+        }
+      }
+
+      final recentConversations = await _messageRepository.getRecentConversations(limit: 5);
+      final conversationItems = <ConversationItem>[];
+
+      for (var conversation in recentConversations) {
+        final otherUserId = conversation.getOtherParticipantId(_currentUserId!);
+        final profile = await _profileRepository.getProfile(otherUserId);
+
+        if (profile != null) {
+          final userProfile = UserProfile.fromProfileData(
+            profile,
+            await _profileRepository.getProfileDetails(otherUserId),
+          );
+
+          conversationItems.add(ConversationItem(
+            conversation: conversation,
+            user: userProfile,
+          ));
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _newMatches = matchProfiles;
+          _conversations = conversationItems;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading matches: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _startAnimations() async {
-    await Future.delayed(
-        const Duration(milliseconds: 150)); // Slightly longer delay
+    await Future.delayed(const Duration(milliseconds: 150));
     if (mounted) {
       _fadeController.forward();
       _headerController.forward();
 
-      await Future.delayed(const Duration(milliseconds: 400)); // Longer delay
+      await Future.delayed(const Duration(milliseconds: 400));
       if (mounted) {
         _listController.forward();
       }
@@ -248,7 +272,7 @@ class _MatchesScreenState extends State<MatchesScreen>
                               ),
                         ),
                         Text(
-                          '${_newMatches.length} new matches • ${_conversations.length} conversations',
+                          '${_newMatches.length} matches • ${_conversations.length} conversations',
                           style:
                               Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     color: AppColors.textSecondary,
@@ -267,24 +291,61 @@ class _MatchesScreenState extends State<MatchesScreen>
   }
 
   Widget _buildContent() {
+    if (_newMatches.isEmpty && _conversations.isEmpty) {
+      return _buildEmptyState();
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingL),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: AppDimensions.spacing24),
-          _buildNewMatchesSection(),
-          const SizedBox(height: AppDimensions.spacing32),
-          _buildConversationsSection(),
-          const SizedBox(height: AppDimensions.spacing24),
+          if (_newMatches.isNotEmpty) ...[
+            _buildNewMatchesSection(),
+            const SizedBox(height: AppDimensions.spacing32),
+          ],
+          if (_conversations.isNotEmpty) ...[
+            _buildConversationsSection(),
+            const SizedBox(height: AppDimensions.spacing24),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.people_outline,
+            size: 64,
+            color: AppColors.textSecondary.withOpacity(0.5),
+          ),
+          const SizedBox(height: AppDimensions.spacing16),
+          Text(
+            'No matches yet',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: AppDimensions.spacing8),
+          Text(
+            'Start swiping to find your matches',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textTertiary,
+                ),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
   }
 
   Widget _buildNewMatchesSection() {
-    if (_newMatches.isEmpty) return const SizedBox.shrink();
-
     return AnimatedBuilder(
       animation: _listController,
       builder: (context, child) {
@@ -330,7 +391,7 @@ class _MatchesScreenState extends State<MatchesScreen>
                 ),
                 const SizedBox(height: AppDimensions.spacing16),
                 SizedBox(
-                  height: 200, // Updated to match smaller card height
+                  height: 200,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: _newMatches.length,
@@ -338,12 +399,10 @@ class _MatchesScreenState extends State<MatchesScreen>
                       return AnimatedBuilder(
                         animation: _listController,
                         builder: (context, child) {
-                          // Safe animation calculation with proper clamping
                           final delay = index * 0.15;
                           final progress =
                               (_listController.value - delay).clamp(0.0, 1.0);
 
-                          // Use easeOut instead of easeOutBack to avoid overshoot
                           final animationValue = Curves.easeOut
                               .transform(progress)
                               .clamp(0.0, 1.0);
@@ -408,7 +467,6 @@ class _MatchesScreenState extends State<MatchesScreen>
                     const Spacer(),
                     TextButton(
                       onPressed: () {
-                        // TODO: Navigate to all conversations
                         HapticFeedback.lightImpact();
                       },
                       child: Text(
@@ -424,12 +482,11 @@ class _MatchesScreenState extends State<MatchesScreen>
                 const SizedBox(height: AppDimensions.spacing16),
                 ..._conversations.asMap().entries.map((entry) {
                   final index = entry.key;
-                  final conversation = entry.value;
+                  final conversationItem = entry.value;
 
                   return AnimatedBuilder(
                     animation: _listController,
                     builder: (context, child) {
-                      // Safe animation calculation for conversations
                       final delay = 0.3 + (index * 0.1);
                       final progress =
                           (_listController.value - delay).clamp(0.0, 1.0);
@@ -445,9 +502,9 @@ class _MatchesScreenState extends State<MatchesScreen>
                                 bottom: AppDimensions.spacing8),
                             child: ConversationTile(
                               key: ValueKey(
-                                  'conversation_${conversation.user.id}'),
-                              conversation: conversation,
-                              onTap: () => _handleConversationTap(conversation),
+                                  'conversation_${conversationItem.user.id}'),
+                              conversation: conversationItem.toDisplayData(_currentUserId ?? ''),
+                              onTap: () => _handleConversationTap(conversationItem),
                             ),
                           ),
                         ),
@@ -468,39 +525,11 @@ class _MatchesScreenState extends State<MatchesScreen>
     Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            MemberProfileScreen(
-          user: user,
-          onLike: () {
-            // Handle like action from profile view
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('You liked ${user.firstName}!'),
-                backgroundColor: AppColors.success,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-                ),
-              ),
-            );
-          },
-          onPass: () {
-            // Handle pass action from profile view
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('You passed on ${user.firstName}'),
-                backgroundColor: AppColors.textSecondary,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-                ),
-              ),
-            );
-          },
-        ),
+            MemberProfileScreen(user: user),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return SlideTransition(
             position: Tween<Offset>(
-              begin: const Offset(0.0, 1.0),
+              begin: const Offset(1.0, 0.0),
               end: Offset.zero,
             ).animate(CurvedAnimation(
               parent: animation,
@@ -509,7 +538,7 @@ class _MatchesScreenState extends State<MatchesScreen>
             child: child,
           );
         },
-        transitionDuration: const Duration(milliseconds: 500),
+        transitionDuration: const Duration(milliseconds: 400),
       ),
     );
   }
@@ -537,12 +566,12 @@ class _MatchesScreenState extends State<MatchesScreen>
     );
   }
 
-  void _handleConversationTap(ConversationData conversation) {
+  void _handleConversationTap(ConversationItem conversationItem) {
     HapticFeedback.lightImpact();
     Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            ChatScreen(user: conversation.user),
+            ChatScreen(user: conversationItem.user),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return SlideTransition(
             position: Tween<Offset>(
@@ -561,14 +590,32 @@ class _MatchesScreenState extends State<MatchesScreen>
   }
 }
 
-// Data class for conversation information
-class ConversationData {
+class ConversationItem {
+  final ConversationData conversation;
+  final UserProfile user;
+
+  ConversationItem({
+    required this.conversation,
+    required this.user,
+  });
+
+  DisplayConversationData toDisplayData(String currentUserId) {
+    return DisplayConversationData(
+      user: user,
+      lastMessage: conversation.lastMessage ?? '',
+      timestamp: conversation.lastMessageAt ?? conversation.createdAt,
+      unreadCount: conversation.getUnreadCount(currentUserId),
+    );
+  }
+}
+
+class DisplayConversationData {
   final UserProfile user;
   final String lastMessage;
   final DateTime timestamp;
   final int unreadCount;
 
-  ConversationData({
+  DisplayConversationData({
     required this.user,
     required this.lastMessage,
     required this.timestamp,

@@ -9,8 +9,10 @@ import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../widgets/swipeable_card_stack.dart';
 import '../widgets/discovery_empty_state.dart';
+import '../widgets/match_modal.dart';
 import 'member_profile_screen.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../messages/presentation/pages/chat_screen.dart';
 
 enum ViewMode { list, swipe }
 
@@ -235,63 +237,26 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
   /// Show match celebration dialog
   void _showMatchDialog(UserProfile profile) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.favorite,
-              color: AppColors.secondary,
-              size: 64,
-            ),
-            const SizedBox(height: AppDimensions.spacing16),
-            Text(
-              'It\'s a Match!',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-            ),
-            const SizedBox(height: AppDimensions.spacing8),
-            Text(
-              'You and ${profile.firstName} liked each other!',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppDimensions.spacing24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Keep Swiping'),
-                  ),
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierDismissible: false,
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return MatchModal(
+            matchedUser: profile,
+            onSendMessage: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => ChatScreen(user: profile),
                 ),
-                const SizedBox(width: AppDimensions.spacing12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      // TODO: Navigate to chat
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.secondary,
-                    ),
-                    child: const Text('Send Message'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+              );
+            },
+            onKeepSwiping: () {
+              Navigator.of(context).pop();
+            },
+          );
+        },
       ),
     );
   }

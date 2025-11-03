@@ -146,6 +146,43 @@ class UserProfile {
     );
   }
 
+  factory UserProfile.fromProfileData(
+    dynamic profileData,
+    dynamic profileDetails,
+  ) {
+    final photoUrls = profileDetails?.photoUrls ?? <String>[];
+
+    return UserProfile(
+      id: profileData.userId,
+      firstName: profileData.firstName,
+      lastName: profileData.lastName,
+      age: profileData.age,
+      location: profileData.location,
+      latitude: profileData.geoLocation?.latitude,
+      longitude: profileData.geoLocation?.longitude,
+      photoUrls: photoUrls,
+      bio: profileDetails?.bio ?? '',
+      denomination: profileDetails?.denomination ?? '',
+      churchAttendance: profileDetails?.churchAttendance ?? '',
+      favoriteVerse: profileDetails?.favoriteBibleVerse ?? '',
+      faithStory: profileDetails?.faithStory ?? '',
+      interests: profileDetails?.interests ?? <String>[],
+      relationshipGoal: profileDetails?.relationshipGoal ?? '',
+      distanceKm: 0,
+      isOnline: false,
+      lastSeen: DateTime.now(),
+      occupation: profileDetails?.occupation ?? '',
+      education: profileDetails?.education ?? '',
+      languages: profileDetails?.languages ?? <String>[],
+      height: profileDetails?.height ?? '',
+      hasChildren: profileDetails?.hasChildren ?? false,
+      wantsChildren: profileDetails?.wantsChildren ?? false,
+      drinks: profileDetails?.drinks ?? false,
+      smokes: profileDetails?.smokes ?? false,
+      personalityType: profileDetails?.personalityType ?? '',
+    );
+  }
+
   UserProfile copyWith({
     String? id,
     String? firstName,

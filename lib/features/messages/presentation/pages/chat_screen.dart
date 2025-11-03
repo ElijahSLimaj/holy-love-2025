@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/services/presence_service.dart';
 import '../../../discovery/data/models/user_profile.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../data/models/chat_message.dart';
+import '../../data/models/conversation_data.dart';
+import '../../data/repositories/message_repository.dart';
+import '../../../notifications/data/repositories/notification_repository.dart';
+import '../../../profile/data/repositories/stats_repository.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/chat_input.dart';
 import '../widgets/typing_indicator.dart';
@@ -27,15 +36,28 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   late Animation<double> _fadeAnimation;
 
   final ScrollController _scrollController = ScrollController();
-  final List<ChatMessage> _messages = [];
+  final MessageRepository _messageRepository = MessageRepository();
+  final NotificationRepository _notificationRepository = NotificationRepository();
+  final StatsRepository _statsRepository = StatsRepository();
+  final PresenceService _presenceService = PresenceService();
+
+  List<ChatMessage> _messages = [];
+  ConversationData? _conversation;
+  String? _conversationId;
+  String? _currentUserId;
   bool _isTyping = false;
-  final bool _isOnline = true;
+  bool _isOnline = false;
+  Timer? _typingTimer;
+
+  StreamSubscription<List<ChatMessage>>? _messagesSubscription;
+  StreamSubscription<ConversationData?>? _conversationSubscription;
+  StreamSubscription<PresenceStatus>? _presenceSubscription;
 
   @override
   void initState() {
     super.initState();
     _setupAnimations();
-    _loadMockMessages();
+    _initializeChat();
     _startAnimations();
   }
 
@@ -67,59 +89,59 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     ));
   }
 
-  void _loadMockMessages() {
-    _messages.addAll([
-      ChatMessage(
-        id: '1',
-        text:
-            'Hey! Thanks for the match! I love your testimony about serving in children\'s ministry 🙏',
-        isFromCurrentUser: false,
-        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-        status: MessageStatus.read,
-      ),
-      ChatMessage(
-        id: '2',
-        text:
-            'Thank you so much! That means a lot to me. I saw that you\'re into rock climbing - that looks so fun!',
-        isFromCurrentUser: true,
-        timestamp:
-            DateTime.now().subtract(const Duration(hours: 1, minutes: 45)),
-        status: MessageStatus.read,
-      ),
-      ChatMessage(
-        id: '3',
-        text:
-            'It really is! There\'s something so peaceful about being up there, just you and God\'s creation. Have you ever tried it?',
-        isFromCurrentUser: false,
-        timestamp:
-            DateTime.now().subtract(const Duration(hours: 1, minutes: 30)),
-        status: MessageStatus.read,
-      ),
-      ChatMessage(
-        id: '4',
-        text:
-            'Not yet, but I\'ve always wanted to! Maybe you could show me some beginner-friendly spots? 😊',
-        isFromCurrentUser: true,
-        timestamp:
-            DateTime.now().subtract(const Duration(hours: 1, minutes: 15)),
-        status: MessageStatus.read,
-      ),
-      ChatMessage(
-        id: '5',
-        text:
-            'I\'d love to! There\'s this great indoor climbing gym that\'s perfect for beginners. Plus they have a really welcoming community there.',
-        isFromCurrentUser: false,
-        timestamp: DateTime.now().subtract(const Duration(hours: 1)),
-        status: MessageStatus.read,
-      ),
-      ChatMessage(
-        id: '6',
-        text: 'That sounds perfect! When would be a good time for you?',
-        isFromCurrentUser: true,
-        timestamp: DateTime.now().subtract(const Duration(minutes: 45)),
-        status: MessageStatus.delivered,
-      ),
-    ]);
+  Future<void> _initializeChat() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState.status != AuthStatus.authenticated) return;
+
+    _currentUserId = authState.user.id;
+    if (_currentUserId == null) return;
+
+    _conversationId = _messageRepository.generateConversationId(
+      _currentUserId!,
+      widget.user.id,
+    );
+
+    final conversation = await _messageRepository.getConversation(_conversationId!);
+    if (conversation == null) {
+      await _messageRepository.createConversation(otherUserId: widget.user.id);
+    }
+
+    _conversationSubscription = _messageRepository
+        .streamConversation(_conversationId!)
+        .listen((conversation) {
+      if (mounted && conversation != null) {
+        setState(() {
+          _conversation = conversation;
+          _isTyping = conversation.isTyping(widget.user.id);
+        });
+      }
+    });
+
+    _messagesSubscription = _messageRepository
+        .streamMessages(_conversationId!)
+        .listen((messages) {
+      if (mounted) {
+        setState(() {
+          _messages = messages.reversed.toList();
+        });
+
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) _scrollToBottom();
+        });
+
+        _messageRepository.markMessagesAsRead(conversationId: _conversationId!);
+      }
+    });
+
+    _presenceSubscription = _presenceService
+        .streamUserStatus(widget.user.id)
+        .listen((status) {
+      if (mounted) {
+        setState(() {
+          _isOnline = status == PresenceStatus.online;
+        });
+      }
+    });
   }
 
   void _startAnimations() async {
@@ -128,7 +150,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _slideController.forward();
       _fadeController.forward();
 
-      // Scroll to bottom after animations
       await Future.delayed(const Duration(milliseconds: 800));
       if (mounted) {
         _scrollToBottom();
@@ -151,6 +172,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _slideController.dispose();
     _fadeController.dispose();
     _scrollController.dispose();
+    _messagesSubscription?.cancel();
+    _conversationSubscription?.cancel();
+    _presenceSubscription?.cancel();
+    _typingTimer?.cancel();
     super.dispose();
   }
 
@@ -200,11 +225,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     width: 2,
                   ),
                 ),
-                child: const Icon(
-                  Icons.person,
-                  color: AppColors.textSecondary,
-                  size: AppDimensions.iconM,
-                ),
+                child: widget.user.photoUrls.isNotEmpty
+                    ? ClipOval(
+                        child: Image.network(
+                          widget.user.photoUrls.first,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.person,
+                        color: AppColors.textSecondary,
+                        size: AppDimensions.iconM,
+                      ),
               ),
               if (_isOnline)
                 Positioned(
@@ -255,7 +287,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         IconButton(
           onPressed: () {
             HapticFeedback.lightImpact();
-            // TODO: Start voice call
           },
           icon: Container(
             padding: const EdgeInsets.all(AppDimensions.paddingXS),
@@ -273,7 +304,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         IconButton(
           onPressed: () {
             HapticFeedback.lightImpact();
-            // TODO: Start video call
           },
           icon: Container(
             padding: const EdgeInsets.all(AppDimensions.paddingXS),
@@ -294,6 +324,28 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildMessagesList() {
+    if (_messages.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.chat_bubble_outline,
+              size: 64,
+              color: AppColors.textSecondary.withOpacity(0.5),
+            ),
+            const SizedBox(height: AppDimensions.spacing16),
+            Text(
+              'Start your conversation',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(AppDimensions.paddingL),
@@ -302,12 +354,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         final message = _messages[index];
         final previousMessage = index > 0 ? _messages[index - 1] : null;
         final showAvatar = previousMessage == null ||
-            previousMessage.isFromCurrentUser != message.isFromCurrentUser;
+            (previousMessage.senderId != message.senderId);
 
         return MessageBubble(
           message: message,
           showAvatar: showAvatar,
           user: widget.user,
+          isFromCurrentUser: message.senderId == _currentUserId,
         );
       },
     );
@@ -324,15 +377,23 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           Container(
             width: AppDimensions.avatarS,
             height: AppDimensions.avatarS,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.lightGray,
               shape: BoxShape.circle,
+              image: widget.user.photoUrls.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(widget.user.photoUrls.first),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
-            child: const Icon(
-              Icons.person,
-              color: AppColors.textSecondary,
-              size: AppDimensions.iconS,
-            ),
+            child: widget.user.photoUrls.isEmpty
+                ? const Icon(
+                    Icons.person,
+                    color: AppColors.textSecondary,
+                    size: AppDimensions.iconS,
+                  )
+                : null,
           ),
           const SizedBox(width: AppDimensions.spacing12),
           const TypingIndicator(),
@@ -356,12 +417,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         child: ChatInput(
           onSendMessage: _handleSendMessage,
           onStartTyping: () {
-            setState(() => _isTyping = true);
-            // Simulate typing stopping after 3 seconds
-            Future.delayed(const Duration(seconds: 3), () {
-              if (mounted) {
-                setState(() => _isTyping = false);
-              }
+            _messageRepository.setTypingStatus(
+              conversationId: _conversationId!,
+              isTyping: true,
+            );
+
+            _typingTimer?.cancel();
+            _typingTimer = Timer(const Duration(seconds: 3), () {
+              _messageRepository.setTypingStatus(
+                conversationId: _conversationId!,
+                isTyping: false,
+              );
             });
           },
         ),
@@ -369,95 +435,36 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _handleSendMessage(String text) {
-    if (text.trim().isEmpty) return;
+  Future<void> _handleSendMessage(String text) async {
+    if (text.trim().isEmpty || _conversationId == null || _currentUserId == null) {
+      return;
+    }
 
     HapticFeedback.lightImpact();
 
-    final newMessage = ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      text: text.trim(),
-      isFromCurrentUser: true,
-      timestamp: DateTime.now(),
-      status: MessageStatus.sending,
-    );
+    try {
+      await _messageRepository.sendMessage(
+        conversationId: _conversationId!,
+        receiverId: widget.user.id,
+        text: text.trim(),
+      );
 
-    setState(() {
-      _messages.add(newMessage);
-    });
+      await _statsRepository.incrementMessagesSent(_currentUserId!);
+      await _statsRepository.incrementMessagesReceived(widget.user.id);
 
-    // Scroll to bottom
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _scrollToBottom();
-    });
-
-    // Simulate message delivery
-    Future.delayed(const Duration(seconds: 1), () {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) _scrollToBottom();
+      });
+    } catch (e) {
+      debugPrint('Error sending message: $e');
       if (mounted) {
-        setState(() {
-          final index = _messages.indexWhere((m) => m.id == newMessage.id);
-          if (index != -1) {
-            _messages[index] =
-                newMessage.copyWith(status: MessageStatus.delivered);
-          }
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to send message'),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
-    });
-
-    // Simulate message read
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() {
-          final index = _messages.indexWhere((m) => m.id == newMessage.id);
-          if (index != -1) {
-            _messages[index] = newMessage.copyWith(status: MessageStatus.read);
-          }
-        });
-      }
-    });
+    }
   }
-}
-
-// Data classes for chat functionality
-class ChatMessage {
-  final String id;
-  final String text;
-  final bool isFromCurrentUser;
-  final DateTime timestamp;
-  final MessageStatus status;
-  final String? imageUrl;
-
-  ChatMessage({
-    required this.id,
-    required this.text,
-    required this.isFromCurrentUser,
-    required this.timestamp,
-    required this.status,
-    this.imageUrl,
-  });
-
-  ChatMessage copyWith({
-    String? id,
-    String? text,
-    bool? isFromCurrentUser,
-    DateTime? timestamp,
-    MessageStatus? status,
-    String? imageUrl,
-  }) {
-    return ChatMessage(
-      id: id ?? this.id,
-      text: text ?? this.text,
-      isFromCurrentUser: isFromCurrentUser ?? this.isFromCurrentUser,
-      timestamp: timestamp ?? this.timestamp,
-      status: status ?? this.status,
-      imageUrl: imageUrl ?? this.imageUrl,
-    );
-  }
-}
-
-enum MessageStatus {
-  sending,
-  delivered,
-  read,
-  failed,
 }

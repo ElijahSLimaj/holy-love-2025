@@ -6,6 +6,7 @@ import 'core/theme/app_theme.dart';
 import 'core/constants/app_strings.dart';
 import 'core/config/mapbox_config.dart';
 import 'core/services/location_service.dart';
+import 'core/services/presence_service.dart';
 import 'features/auth/data/repositories/auth_repository.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/pages/splash_screen.dart';
@@ -65,13 +66,63 @@ class HolyLoveApp extends StatelessWidget {
   }
 }
 
-class AppView extends StatelessWidget {
+class AppView extends StatefulWidget {
   const AppView({super.key});
+
+  @override
+  State<AppView> createState() => _AppViewState();
+}
+
+class _AppViewState extends State<AppView> with WidgetsBindingObserver {
+  final PresenceService _presenceService = PresenceService();
+  bool _isAuthenticated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!_isAuthenticated) return;
+
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _presenceService.setOnline();
+        break;
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+        _presenceService.setAway();
+        break;
+      case AppLifecycleState.detached:
+        _presenceService.setOffline();
+        break;
+      case AppLifecycleState.hidden:
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
+        final wasAuthenticated = _isAuthenticated;
+        _isAuthenticated = state.status == AuthStatus.authenticated;
+
+        if (_isAuthenticated && !wasAuthenticated) {
+          _presenceService.setOnline();
+          _presenceService.startHeartbeat();
+        } else if (!_isAuthenticated && wasAuthenticated) {
+          _presenceService.setOffline();
+        }
+
         return _AppNavigator(authState: state);
       },
     );

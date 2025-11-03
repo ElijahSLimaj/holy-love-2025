@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import '../../../profile/data/repositories/stats_repository.dart';
 
 class AuthUser {
   final String id;
@@ -263,6 +264,9 @@ class AuthRepository {
         'profileComplete': false,
       });
       await userRef.set(userData);
+
+      final statsRepository = StatsRepository();
+      await statsRepository.initializeUserStats(firebaseUser.uid);
     } else {
       await userRef.update(userData);
     }

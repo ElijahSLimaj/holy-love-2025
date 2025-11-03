@@ -29,7 +29,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   late Animation<double> _toggleScaleAnimation;
 
   int _currentIndex = 0;
-  ViewMode _currentViewMode = ViewMode.list;
+  // ViewMode _currentViewMode = ViewMode.list; // Swipe mode disabled - using list view only
 
   final List<NavigationTab> _tabs = [
     const NavigationTab(
@@ -145,19 +145,20 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     );
   }
 
-  void _toggleViewMode() {
-    if (_currentIndex != 0) return; // Only works on discovery screen
-
-    HapticFeedback.mediumImpact();
-    _toggleAnimationController.forward().then((_) {
-      _toggleAnimationController.reverse();
-    });
-
-    setState(() {
-      _currentViewMode =
-          _currentViewMode == ViewMode.list ? ViewMode.swipe : ViewMode.list;
-    });
-  }
+  // Swipe mode disabled - toggle function commented out
+  // void _toggleViewMode() {
+  //   if (_currentIndex != 0) return;
+  //
+  //   HapticFeedback.mediumImpact();
+  //   _toggleAnimationController.forward().then((_) {
+  //     _toggleAnimationController.reverse();
+  //   });
+  //
+  //   setState(() {
+  //     _currentViewMode =
+  //         _currentViewMode == ViewMode.list ? ViewMode.swipe : ViewMode.list;
+  //   });
+  // }
 
   @override
   void dispose() {
@@ -247,36 +248,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   }
 
   Widget _buildViewToggle() {
-    // Only show on discovery screen
-    if (_currentIndex != 0) {
-      return const SizedBox.shrink();
-    }
-
-    return AnimatedBuilder(
-      animation: _toggleAnimationController,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _toggleScaleAnimation.value,
-          child: GestureDetector(
-            onTap: _toggleViewMode,
-            child: Container(
-              padding: const EdgeInsets.all(AppDimensions.spacing8),
-              decoration: BoxDecoration(
-                gradient: AppColors.loveGradient,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusS),
-              ),
-              child: Icon(
-                _currentViewMode == ViewMode.list
-                    ? Icons.view_carousel_outlined
-                    : Icons.view_list_outlined,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
-        );
-      },
-    );
+    return const SizedBox.shrink();
   }
 
   Widget _buildNotificationAction() {
@@ -410,7 +382,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         });
       },
       children: [
-        DiscoveryScreen(viewMode: _currentViewMode),
+        const DiscoveryScreen(viewMode: ViewMode.list), // Hardcoded to list view only
         const MatchesScreen(),
         const MessagesScreen(),
         const ProfileScreen(),

@@ -2,18 +2,20 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../discovery/data/models/user_profile.dart';
-import '../pages/chat_screen.dart';
+import '../../data/models/chat_message.dart';
 
 class MessageBubble extends StatefulWidget {
   final ChatMessage message;
   final bool showAvatar;
   final UserProfile user;
+  final bool isFromCurrentUser;
 
   const MessageBubble({
     super.key,
     required this.message,
     required this.showAvatar,
     required this.user,
+    required this.isFromCurrentUser,
   });
 
   @override
@@ -48,7 +50,7 @@ class _MessageBubbleState extends State<MessageBubble>
     ));
 
     _slideAnimation = Tween<Offset>(
-      begin: widget.message.isFromCurrentUser
+      begin: widget.isFromCurrentUser
           ? const Offset(0.3, 0)
           : const Offset(-0.3, 0),
       end: Offset.zero,
@@ -92,18 +94,18 @@ class _MessageBubbleState extends State<MessageBubble>
             child: Container(
               margin: const EdgeInsets.only(bottom: AppDimensions.spacing8),
               child: Row(
-                mainAxisAlignment: widget.message.isFromCurrentUser
+                mainAxisAlignment: widget.isFromCurrentUser
                     ? MainAxisAlignment.end
                     : MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  if (!widget.message.isFromCurrentUser) ...[
+                  if (!widget.isFromCurrentUser) ...[
                     _buildAvatar(),
                     const SizedBox(width: AppDimensions.spacing8),
                   ],
                   Flexible(
                     child: Column(
-                      crossAxisAlignment: widget.message.isFromCurrentUser
+                      crossAxisAlignment: widget.isFromCurrentUser
                           ? CrossAxisAlignment.end
                           : CrossAxisAlignment.start,
                       children: [
@@ -113,7 +115,7 @@ class _MessageBubbleState extends State<MessageBubble>
                       ],
                     ),
                   ),
-                  if (widget.message.isFromCurrentUser) ...[
+                  if (widget.isFromCurrentUser) ...[
                     const SizedBox(width: AppDimensions.spacing8),
                     _buildMessageStatus(),
                   ],
@@ -156,25 +158,25 @@ class _MessageBubbleState extends State<MessageBubble>
       ),
       decoration: BoxDecoration(
         gradient:
-            widget.message.isFromCurrentUser ? AppColors.loveGradient : null,
-        color: widget.message.isFromCurrentUser ? null : AppColors.lightGray,
+            widget.isFromCurrentUser ? AppColors.loveGradient : null,
+        color: widget.isFromCurrentUser ? null : AppColors.lightGray,
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(AppDimensions.radiusL),
           topRight: const Radius.circular(AppDimensions.radiusL),
           bottomLeft: Radius.circular(
-            widget.message.isFromCurrentUser
+            widget.isFromCurrentUser
                 ? AppDimensions.radiusL
                 : AppDimensions.radiusS,
           ),
           bottomRight: Radius.circular(
-            widget.message.isFromCurrentUser
+            widget.isFromCurrentUser
                 ? AppDimensions.radiusS
                 : AppDimensions.radiusL,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: widget.message.isFromCurrentUser
+            color: widget.isFromCurrentUser
                 ? AppColors.primary.withOpacity(0.2)
                 : AppColors.shadow.withOpacity(0.1),
             blurRadius: 8,
@@ -185,7 +187,7 @@ class _MessageBubbleState extends State<MessageBubble>
       child: Text(
         widget.message.text,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: widget.message.isFromCurrentUser
+              color: widget.isFromCurrentUser
                   ? AppColors.white
                   : AppColors.textPrimary,
               height: 1.4,
@@ -197,8 +199,8 @@ class _MessageBubbleState extends State<MessageBubble>
   Widget _buildMessageInfo() {
     return Padding(
       padding: EdgeInsets.only(
-        left: widget.message.isFromCurrentUser ? 0 : AppDimensions.spacing8,
-        right: widget.message.isFromCurrentUser ? AppDimensions.spacing8 : 0,
+        left: widget.isFromCurrentUser ? 0 : AppDimensions.spacing8,
+        right: widget.isFromCurrentUser ? AppDimensions.spacing8 : 0,
       ),
       child: Text(
         _formatTime(widget.message.timestamp),
@@ -211,7 +213,7 @@ class _MessageBubbleState extends State<MessageBubble>
   }
 
   Widget _buildMessageStatus() {
-    if (!widget.message.isFromCurrentUser) return const SizedBox.shrink();
+    if (!widget.isFromCurrentUser) return const SizedBox.shrink();
 
     Widget statusIcon;
     Color statusColor;
@@ -228,9 +230,16 @@ class _MessageBubbleState extends State<MessageBubble>
         );
         statusColor = AppColors.textTertiary;
         break;
-      case MessageStatus.delivered:
+      case MessageStatus.sent:
         statusIcon = const Icon(
           Icons.check,
+          size: 14,
+        );
+        statusColor = AppColors.textTertiary;
+        break;
+      case MessageStatus.delivered:
+        statusIcon = const Icon(
+          Icons.done_all,
           size: 14,
         );
         statusColor = AppColors.textTertiary;

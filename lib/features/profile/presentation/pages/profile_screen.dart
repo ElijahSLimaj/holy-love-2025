@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
@@ -12,7 +13,9 @@ import '../../../settings/presentation/pages/privacy_settings_screen.dart';
 import '../../../settings/presentation/pages/help_support_screen.dart';
 import 'edit_profile_screen.dart';
 import '../../data/repositories/profile_repository.dart';
+import '../../data/repositories/stats_repository.dart';
 import '../../data/models/profile_data.dart';
+import '../../data/models/user_stats.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -32,19 +35,19 @@ class _ProfileScreenState extends State<ProfileScreen>
   late Animation<Offset> _headerSlideAnimation;
   late List<Animation<double>> _cardAnimations;
 
-  // User profile data
+  final StatsRepository _statsRepository = StatsRepository();
+
   ProfileData? _profileData;
   ProfileDetailsData? _profileDetails;
+  UserStats? _userStats;
   bool _isLoading = true;
-  
-  // Static data for features not yet implemented
+  StreamSubscription<UserStats?>? _statsSubscription;
+  final int maxPhotos = 6;
+
   final Map<String, dynamic> _staticData = {
-    'totalLikes': 127,
-    'totalMatches': 23,
-    'profileViews': 89,
-    'maxPhotos': 6,
-    'isVerified': true,
+    'isVerified': false,
     'isPremium': false,
+    'maxPhotos': 6,
   };
 
   @override
@@ -60,33 +63,36 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (authState.status == AuthStatus.authenticated) {
         final userId = authState.user.id;
         final profileRepository = context.read<ProfileRepository>();
-        
-        // Load profile data
+
         final profileData = await profileRepository.getProfile(userId);
         final profileDetails = await profileRepository.getProfileDetails(userId);
-        
-        // Recalculate completion percentage to fix any profiles with old calculation
+
         await profileRepository.recalculateCompletion(userId);
-        
-        // Reload profile data after recalculation
+
         final updatedProfileData = await profileRepository.getProfile(userId);
-        
+
+        _statsSubscription = _statsRepository.streamUserStats(userId).listen((stats) {
+          if (mounted) {
+            setState(() {
+              _userStats = stats;
+            });
+          }
+        });
+
         if (mounted) {
           setState(() {
             _profileData = updatedProfileData ?? profileData;
             _profileDetails = profileDetails;
             _isLoading = false;
           });
-          
-          // Debug logging
+
           final finalData = updatedProfileData ?? profileData;
           debugPrint('Profile loaded: ${finalData?.firstName} ${finalData?.lastName}');
           debugPrint('Main photo URL: ${finalData?.mainPhotoUrl}');
           debugPrint('Photo count: ${profileDetails?.photoCount}');
           debugPrint('Profile completion: ${finalData?.profileCompletionPercentage}%');
           debugPrint('Profile complete: ${finalData?.profileComplete}');
-          
-          // Start animations after data is loaded
+
           _startAnimations();
         }
       }
@@ -96,7 +102,6 @@ class _ProfileScreenState extends State<ProfileScreen>
         setState(() {
           _isLoading = false;
         });
-        // Start animations even if data loading fails
         _startAnimations();
       }
     }
@@ -186,6 +191,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     _fadeController.dispose();
     _headerController.dispose();
     _listController.dispose();
+    _statsSubscription?.cancel();
     super.dispose();
   }
 
@@ -526,9 +532,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                 child: Opacity(
                   opacity: _cardAnimations[0].value.clamp(0.0, 1.0),
                   child: ProfileStatsCard(
-                    likes: _staticData['totalLikes'],
-                    matches: _staticData['totalMatches'],
-                    views: _staticData['profileViews'],
+                    likes: _userStats?.totalLikesReceived ?? 0,
+                    matches: _userStats?.totalMatches ?? 0,
+                    views: _userStats?.profileViews ?? 0,
                   ),
                 ),
               );
