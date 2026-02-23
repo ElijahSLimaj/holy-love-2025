@@ -30,6 +30,8 @@ class AuthRepository {
   final GoogleSignIn _googleSignIn;
   final FirebaseFirestore _firestore;
 
+  static const String _usersCollection = 'users';
+
   AuthRepository({
     FirebaseAuth? firebaseAuth,
     GoogleSignIn? googleSignIn,
@@ -217,7 +219,7 @@ class AuthRepository {
     try {
       // Check if user has completed onboarding
       final userDoc =
-          await _firestore.collection('users').doc(firebaseUser.uid).get();
+          await _firestore.collection(_usersCollection).doc(firebaseUser.uid).get();
 
       // User is considered new if:
       // 1. Document doesn't exist, OR
@@ -249,7 +251,7 @@ class AuthRepository {
   /// Creates or updates user document in Firestore
   Future<void> _createOrUpdateUserDocument(
       User firebaseUser, bool isNewUser) async {
-    final userRef = _firestore.collection('users').doc(firebaseUser.uid);
+    final userRef = _firestore.collection(_usersCollection).doc(firebaseUser.uid);
 
     final userData = <String, dynamic>{
       'email': firebaseUser.email,

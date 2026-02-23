@@ -4,10 +4,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../models/chat_message.dart';
 import '../models/conversation_data.dart';
+import '../../../notifications/data/repositories/notification_repository.dart';
+import '../../../profile/data/repositories/profile_repository.dart';
 
 class MessageRepository {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
+  final NotificationRepository _notificationRepository;
+  final ProfileRepository _profileRepository;
 
   static const String _conversationsCollection = 'conversations';
   static const String _messagesSubcollection = 'messages';
@@ -15,8 +19,12 @@ class MessageRepository {
   MessageRepository({
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
+    NotificationRepository? notificationRepository,
+    ProfileRepository? profileRepository,
   })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _auth = auth ?? FirebaseAuth.instance;
+        _auth = auth ?? FirebaseAuth.instance,
+        _notificationRepository = notificationRepository ?? NotificationRepository(),
+        _profileRepository = profileRepository ?? ProfileRepository();
 
   String? get currentUserId => _auth.currentUser?.uid;
 
@@ -151,6 +159,26 @@ class MessageRepository {
 
     await batch.commit();
 
+    // Create notification for the receiver (don't fail message send if notification fails)
+    try {
+      final senderProfile = await _profileRepository.getProfile(userId);
+      if (senderProfile != null) {
+        final senderName = '${senderProfile.firstName} ${senderProfile.lastName}';
+        final messagePreview = text.length > 50 ? '${text.substring(0, 50)}...' : text;
+
+        await _notificationRepository.createMessageNotification(
+          userId: receiverId,
+          senderId: userId,
+          senderName: senderName,
+          messagePreview: messagePreview,
+          senderPhoto: senderProfile.mainPhotoUrl,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error creating message notification: $e');
+      // Continue - notification failure shouldn't fail message send
+    }
+
     return messageId;
   }
 
@@ -260,6 +288,25 @@ class MessageRepository {
       debugPrint('Error getting unread count: $e');
       return 0;
     }
+  }
+
+  Stream<int> streamUnreadCount() {
+    final userId = currentUserId;
+    if (userId == null) return Stream.value(0);
+
+    return _firestore
+        .collection(_conversationsCollection)
+        .where('participants', arrayContains: userId)
+        .where('isActive', isEqualTo: true)
+        .snapshots()
+        .map((snapshot) {
+      int totalUnread = 0;
+      for (var doc in snapshot.docs) {
+        final unreadCounts = doc.data()['unreadCounts'] as Map<String, dynamic>?;
+        totalUnread += (unreadCounts?[userId] ?? 0) as int;
+      }
+      return totalUnread;
+    });
   }
 
   Future<void> deleteConversation(String conversationId) async {

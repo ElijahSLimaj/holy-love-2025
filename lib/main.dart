@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_strings.dart';
 import 'core/config/mapbox_config.dart';
 import 'core/services/location_service.dart';
 import 'core/services/presence_service.dart';
+import 'core/services/notification_service.dart';
 import 'features/auth/data/repositories/auth_repository.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/pages/splash_screen.dart';
@@ -15,12 +17,30 @@ import 'features/main/presentation/pages/main_navigation_screen.dart';
 import 'features/profile/data/repositories/profile_repository.dart';
 import 'features/profile/presentation/bloc/profile_creation_bloc.dart';
 
+// Global navigator key for navigation from anywhere in the app
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+// Background message handler must be a top-level function
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  debugPrint('Background message received: ${message.messageId}');
+  // Process background notification if needed
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize FCM background message handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Initialize notification service
+  final notificationService = NotificationService();
+  await notificationService.initialize(navigatorKey: navigatorKey);
 
   // Initialize location service
   if (MapboxConfig.isConfigured) {
@@ -56,6 +76,7 @@ class HolyLoveApp extends StatelessWidget {
           ),
         ],
         child: MaterialApp(
+          navigatorKey: navigatorKey,
           title: AppStrings.appName,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,

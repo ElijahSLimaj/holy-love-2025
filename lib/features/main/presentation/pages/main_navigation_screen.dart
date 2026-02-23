@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -9,7 +10,9 @@ import '../../../matches/presentation/pages/matches_screen.dart';
 import '../../../messages/presentation/pages/messages_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
 import '../../../notifications/presentation/pages/notifications_screen.dart';
+import '../../../notifications/data/repositories/notification_repository.dart';
 import '../../../discovery/presentation/pages/discovery_filters_screen.dart';
+import '../../../messages/data/repositories/message_repository.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -29,6 +32,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   late Animation<double> _toggleScaleAnimation;
 
   int _currentIndex = 0;
+  int _unreadNotificationCount = 0;
+  int _unreadMessagesCount = 0;
+  int _unreadMatchesCount = 0;
+  StreamSubscription<int>? _notificationSubscription;
+  StreamSubscription<int>? _messagesSubscription;
+  StreamSubscription<int>? _matchesSubscription;
+  final NotificationRepository _notificationRepository = NotificationRepository();
+  final MessageRepository _messageRepository = MessageRepository();
   // ViewMode _currentViewMode = ViewMode.list; // Swipe mode disabled - using list view only
 
   final List<NavigationTab> _tabs = [
@@ -70,6 +81,48 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     _setupControllers();
     _setupAnimations();
     _startInitialAnimations();
+    _listenToNotifications();
+  }
+
+  void _listenToNotifications() {
+    _notificationSubscription = _notificationRepository.streamUnreadCount().listen(
+      (count) {
+        if (mounted) {
+          setState(() {
+            _unreadNotificationCount = count;
+          });
+        }
+      },
+      onError: (error) {
+        // Silently fail - keep count at 0
+      },
+    );
+
+    _messagesSubscription = _messageRepository.streamUnreadCount().listen(
+      (count) {
+        if (mounted) {
+          setState(() {
+            _unreadMessagesCount = count;
+          });
+        }
+      },
+      onError: (error) {
+        // Silently fail - keep count at 0
+      },
+    );
+
+    _matchesSubscription = _notificationRepository.streamUnreadMatchCount().listen(
+      (count) {
+        if (mounted) {
+          setState(() {
+            _unreadMatchesCount = count;
+          });
+        }
+      },
+      onError: (error) {
+        // Silently fail - keep count at 0
+      },
+    );
   }
 
   void _setupControllers() {
@@ -162,6 +215,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
 
   @override
   void dispose() {
+    _notificationSubscription?.cancel();
+    _messagesSubscription?.cancel();
+    _matchesSubscription?.cancel();
     _pageController.dispose();
     _navigationController.dispose();
     _fadeController.dispose();
@@ -196,6 +252,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
         animations: _tabAnimations,
+        badgeCounts: [
+          null, // Discovery - no badge
+          _unreadMatchesCount > 0 ? _unreadMatchesCount : null, // Matches
+          _unreadMessagesCount > 0 ? _unreadMessagesCount : null, // Messages
+          null, // Profile - no badge
+        ],
       ),
     );
   }
@@ -252,9 +314,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   }
 
   Widget _buildNotificationAction() {
-    // Mock unread count - in a real app this would come from a state management solution
-    const int unreadCount = 3;
-
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -294,7 +353,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
               size: 20,
             ),
           ),
-          if (unreadCount > 0)
+          if (_unreadNotificationCount > 0)
             Positioned(
               top: -2,
               right: -2,
@@ -309,7 +368,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                   minHeight: 18,
                 ),
                 child: Text(
-                  unreadCount > 99 ? '99+' : unreadCount.toString(),
+                  _unreadNotificationCount > 99 ? '99+' : _unreadNotificationCount.toString(),
                   style: const TextStyle(
                     color: AppColors.white,
                     fontSize: 10,

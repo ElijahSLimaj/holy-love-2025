@@ -1,22 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../data/models/user_profile.dart';
+import '../../data/services/interaction_service.dart';
+import '../../data/services/favorites_service.dart';
 import '../../../messages/presentation/pages/chat_screen.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../subscription/data/services/subscription_service.dart';
+import '../../../subscription/presentation/pages/paywall_screen.dart';
 
 class MemberProfileScreen extends StatefulWidget {
   final UserProfile user;
   final VoidCallback? onLike;
   final VoidCallback? onPass;
+  final bool? initialLikedState; // Pass from discovery screen if known
 
   const MemberProfileScreen({
     super.key,
     required this.user,
     this.onLike,
     this.onPass,
+    this.initialLikedState,
   });
 
   @override
@@ -38,14 +46,122 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
   late PageController _pageController;
   int _currentPhotoIndex = 0;
   late ScrollController _scrollController;
+  
+  final InteractionService _interactionService = InteractionService();
+  final FavoritesService _favoritesService = FavoritesService();
+  final SubscriptionService _subscriptionService = SubscriptionService();
+  bool _hasLiked = false;
+  bool _isCheckingLike = true;
+  bool _isFavorited = false;
+  bool _isCheckingFavorite = true;
+  String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
     _scrollController = ScrollController();
+    
+    // Initialize liked state from passed parameter if available
+    if (widget.initialLikedState != null) {
+      _hasLiked = widget.initialLikedState!;
+      _isCheckingLike = false;
+    }
+    
     _setupAnimations();
+    _checkLikeStatus();
+    _checkFavoriteStatus();
     _startAnimations();
+  }
+  
+  @override
+  void didUpdateWidget(MemberProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the initial liked state changed, update our state
+    if (widget.initialLikedState != oldWidget.initialLikedState) {
+      setState(() {
+        _hasLiked = widget.initialLikedState ?? false;
+        _isCheckingLike = false;
+      });
+    }
+  }
+  
+  Future<void> _checkLikeStatus() async {
+    // Use initial state for immediate UI feedback if provided
+    if (widget.initialLikedState != null) {
+      setState(() {
+        _hasLiked = widget.initialLikedState!;
+        _isCheckingLike = false;
+      });
+    }
+    
+    // Always verify with database to ensure persistence
+    final authState = context.read<AuthBloc>().state;
+    if (authState.status != AuthStatus.authenticated) {
+      if (widget.initialLikedState == null) {
+        setState(() {
+          _isCheckingLike = false;
+        });
+      }
+      return;
+    }
+    
+    _currentUserId = authState.user.id;
+    
+    try {
+      final hasLiked = await _interactionService.hasLikedUser(
+        currentUserId: _currentUserId!,
+        targetUserId: widget.user.id,
+      );
+      
+      if (mounted) {
+        setState(() {
+          _hasLiked = hasLiked; // Always use database result for accuracy
+          _isCheckingLike = false;
+        });
+      }
+    } catch (e) {
+      // Silently fail - will default to false
+      if (mounted) {
+        setState(() {
+          _isCheckingLike = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _checkFavoriteStatus() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState.status != AuthStatus.authenticated) {
+      if (mounted) {
+        setState(() {
+          _isCheckingFavorite = false;
+        });
+      }
+      return;
+    }
+    
+    _currentUserId = authState.user.id;
+    
+    try {
+      final isFavorited = await _favoritesService.isFavorited(
+        currentUserId: _currentUserId!,
+        targetUserId: widget.user.id,
+      );
+      
+      if (mounted) {
+        setState(() {
+          _isFavorited = isFavorited;
+          _isCheckingFavorite = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCheckingFavorite = false;
+        });
+      }
+    }
   }
 
   void _setupAnimations() {
@@ -246,8 +362,13 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                 ),
                 child: Stack(
                   children: [
-                    // Photo PageView
-                    PageView.builder(
+                    // Photo PageView - tappable to open full-screen viewer
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        _showPhotoViewer(widget.user.photoUrls, _currentPhotoIndex);
+                      },
+                      child: PageView.builder(
                       controller: _pageController,
                       onPageChanged: (index) {
                         setState(() {
@@ -278,6 +399,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                           ),
                         );
                       },
+                      ),
                     ),
 
                     // Photo indicators
@@ -310,12 +432,12 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
 
                     // Online status
                     Positioned(
-                      top: MediaQuery.of(context).padding.top + 80,
+                      top: MediaQuery.of(context).padding.top + AppDimensions.paddingM,
                       right: AppDimensions.paddingL,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: AppDimensions.paddingM,
-                          vertical: AppDimensions.paddingS,
+                          horizontal: 12,
+                          vertical: 8,
                         ),
                         decoration: BoxDecoration(
                           color: widget.user.isOnline
@@ -336,7 +458,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                                 shape: BoxShape.circle,
                               ),
                             ),
-                            const SizedBox(width: AppDimensions.spacing8),
+                            const SizedBox(width: 8),
                             Text(
                               widget.user.isOnline ? 'Online' : 'Offline',
                               style: Theme.of(context)
@@ -904,8 +1026,23 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
               Expanded(
                 child: CustomButton(
                   text: 'Message',
-                  onPressed: () {
+                  onPressed: () async {
                     HapticFeedback.lightImpact();
+
+                    // Gate: check if user can message this person
+                    final authState = context.read<AuthBloc>().state;
+                    if (authState.status == AuthStatus.authenticated) {
+                      final canMsg = await _subscriptionService.canMessage(
+                        authState.user.id,
+                        widget.user.id,
+                      );
+                      if (!canMsg && mounted) {
+                        PaywallScreen.show(context, PaywallTrigger.messaging);
+                        return;
+                      }
+                    }
+
+                    if (!mounted) return;
                     Navigator.of(context).push(
                       PageRouteBuilder(
                         pageBuilder: (context, animation, secondaryAnimation) =>
@@ -942,13 +1079,45 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
                   ),
                 ),
                 child: IconButton(
-                  onPressed: () {
+                  onPressed: _isCheckingFavorite
+                      ? null
+                      : () async {
                     HapticFeedback.lightImpact();
-                    // TODO: Add to favorites
-                  },
-                  icon: const Icon(
-                    Icons.favorite_border,
-                    color: AppColors.primary,
+                          
+                          final authState = context.read<AuthBloc>().state;
+                          if (authState.status != AuthStatus.authenticated) return;
+                          
+                          final userId = authState.user.id;
+                          
+                          try {
+                            if (_isFavorited) {
+                              await _favoritesService.removeFromFavorites(
+                                currentUserId: userId,
+                                targetUserId: widget.user.id,
+                              );
+                              if (mounted) {
+                                setState(() {
+                                  _isFavorited = false;
+                                });
+                              }
+                            } else {
+                              await _favoritesService.addToFavorites(
+                                currentUserId: userId,
+                                targetUserId: widget.user.id,
+                              );
+                              if (mounted) {
+                                setState(() {
+                                  _isFavorited = true;
+                                });
+                              }
+                            }
+                          } catch (e) {
+                            // Silently fail
+                          }
+                        },
+                  icon: Icon(
+                    _isFavorited ? Icons.favorite : Icons.favorite_border,
+                    color: _isFavorited ? AppColors.error : AppColors.primary,
                     size: AppDimensions.iconM,
                   ),
                 ),
@@ -961,8 +1130,9 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
           Row(
             children: [
               Expanded(
+                flex: 3,
                 child: CustomButton(
-                  text: 'Pass',
+                  text: 'No',
                   onPressed: () {
                     HapticFeedback.mediumImpact();
                     widget.onPass?.call();
@@ -974,19 +1144,242 @@ class _MemberProfileScreenState extends State<MemberProfileScreen>
               ),
               const SizedBox(width: AppDimensions.spacing16),
               Expanded(
-                flex: 2,
-                child: CustomButton(
-                  text: 'Like ❤️',
-                  onPressed: () {
+                flex: 4,
+                child: _hasLiked
+                    ? Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                          border: Border.all(
+                            color: AppColors.success.withOpacity(0.3),
+                            width: 2,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppDimensions.paddingL,
+                          vertical: AppDimensions.paddingM,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.favorite,
+                              color: AppColors.success,
+                              size: AppDimensions.iconS,
+                            ),
+                            const SizedBox(width: AppDimensions.spacing8),
+                            Text(
+                              'Already Liked',
+                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: AppColors.success,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : CustomButton(
+                        text: _isCheckingLike 
+                            ? 'Checking...' 
+                            : _hasLiked 
+                                ? 'Already Liked ✓' 
+                                : 'I\'m Interested ❤️',
+                        onPressed: _isCheckingLike || _hasLiked
+                            ? null
+                            : () {
                     HapticFeedback.heavyImpact();
+
+                                // Update state immediately for instant feedback
+                                setState(() {
+                                  _hasLiked = true;
+                                });
+
+                                // Call the like callback (gated in DiscoveryScreen)
                     widget.onLike?.call();
+
+                                // Don't pop immediately - let user see the "Already Liked" state
+                                Future.delayed(const Duration(milliseconds: 800), () {
+                                  if (mounted) {
                     Navigator.of(context).pop();
+                                  }
+                                });
                   },
-                  variant: ButtonVariant.primary,
+                        variant: _hasLiked ? ButtonVariant.secondary : ButtonVariant.primary,
+                        customColor: _hasLiked ? AppColors.success : null,
+                        icon: _hasLiked 
+                            ? const Icon(Icons.check, color: AppColors.white, size: 20)
+                            : null,
                   size: ButtonSize.large,
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show full-screen photo viewer dialog
+  void _showPhotoViewer(List<String> photoUrls, int initialIndex) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.95),
+      builder: (context) => _PhotoViewerDialog(
+        photoUrls: photoUrls,
+        initialIndex: initialIndex,
+      ),
+    );
+  }
+}
+
+/// Full-screen photo viewer dialog
+class _PhotoViewerDialog extends StatefulWidget {
+  final List<String> photoUrls;
+  final int initialIndex;
+
+  const _PhotoViewerDialog({
+    required this.photoUrls,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_PhotoViewerDialog> createState() => _PhotoViewerDialogState();
+}
+
+class _PhotoViewerDialogState extends State<_PhotoViewerDialog> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.zero,
+      child: Stack(
+        children: [
+          // Photo PageView
+          PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+              HapticFeedback.selectionClick();
+            },
+            itemCount: widget.photoUrls.length,
+            itemBuilder: (context, index) {
+              return InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Center(
+                  child: CachedNetworkImage(
+                    imageUrl: widget.photoUrls[index],
+                    fit: BoxFit.contain,
+                    placeholder: (context, url) => const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => const Center(
+                      child: Icon(
+                        Icons.broken_image,
+                        color: AppColors.white,
+                        size: 100,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+
+          // Photo counter
+          if (widget.photoUrls.length > 1)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 16,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.paddingM,
+                    vertical: AppDimensions.paddingS,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+                  ),
+                  child: Text(
+                    '${_currentIndex + 1} / ${widget.photoUrls.length}',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+              ),
+            ),
+
+          // Photo indicators
+          if (widget.photoUrls.length > 1)
+            Positioned(
+              bottom: MediaQuery.of(context).padding.bottom + 80,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: widget.photoUrls.asMap().entries.map((entry) {
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    height: 4,
+                    width: _currentIndex == entry.key ? 24 : 8,
+                    decoration: BoxDecoration(
+                      color: _currentIndex == entry.key
+                          ? AppColors.white
+                          : AppColors.white.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+
+          // Close button
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 16,
+            right: 16,
+            child: IconButton(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.of(context).pop();
+              },
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close,
+                  color: AppColors.white,
+                  size: 24,
+                ),
+              ),
+            ),
           ),
         ],
       ),

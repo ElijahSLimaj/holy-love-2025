@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import '../../../profile/data/repositories/stats_repository.dart';
 import '../../../notifications/data/repositories/notification_repository.dart';
 import '../../../profile/data/repositories/profile_repository.dart';
@@ -11,6 +10,9 @@ class InteractionService {
   final NotificationRepository _notificationRepository;
   final ProfileRepository _profileRepository;
   final MessageRepository _messageRepository;
+  
+  static const String _userInteractionsCollection = 'user_interactions';
+  static const String _matchesCollection = 'matches';
 
   InteractionService({
     FirebaseFirestore? firestore,
@@ -32,7 +34,7 @@ class InteractionService {
       final batch = _firestore.batch();
 
       final interactionRef = _firestore
-          .collection('user_interactions')
+          .collection(_userInteractionsCollection)
           .doc('${currentUserId}_$targetUserId');
 
       batch.set(interactionRef, {
@@ -43,7 +45,7 @@ class InteractionService {
       });
 
       final reverseInteractionDoc = await _firestore
-          .collection('user_interactions')
+          .collection(_userInteractionsCollection)
           .doc('${targetUserId}_$currentUserId')
           .get();
 
@@ -70,11 +72,9 @@ class InteractionService {
 
       await batch.commit();
 
-      debugPrint('User $currentUserId liked $targetUserId. Match: $isMatch');
       return isMatch;
 
     } catch (e) {
-      debugPrint('Error recording like: $e');
       return false;
     }
   }
@@ -85,7 +85,7 @@ class InteractionService {
   }) async {
     try {
       await _firestore
-          .collection('user_interactions')
+          .collection(_userInteractionsCollection)
           .doc('${currentUserId}_$targetUserId')
           .set({
         'userId': currentUserId,
@@ -93,11 +93,8 @@ class InteractionService {
         'action': 'pass',
         'timestamp': FieldValue.serverTimestamp(),
       });
-
-      debugPrint('User $currentUserId passed on $targetUserId');
-
     } catch (e) {
-      debugPrint('Error recording pass: $e');
+      // Silently fail
     }
   }
 
@@ -108,7 +105,7 @@ class InteractionService {
   ) async {
     final matchId = _generateMatchId(user1Id, user2Id);
 
-    final matchRef = _firestore.collection('matches').doc(matchId);
+    final matchRef = _firestore.collection(_matchesCollection).doc(matchId);
 
     batch.set(matchRef, {
       'user1Id': user1Id,
@@ -143,7 +140,6 @@ class InteractionService {
       await _messageRepository.createConversation(otherUserId: user2Id);
     }
 
-    debugPrint('Created match: $matchId');
   }
 
   /// Generate consistent match ID for two users
@@ -156,16 +152,24 @@ class InteractionService {
   Future<Set<String>> getInteractedUsers(String currentUserId) async {
     try {
       final querySnapshot = await _firestore
-          .collection('user_interactions')
+          .collection(_userInteractionsCollection)
           .where('userId', isEqualTo: currentUserId)
           .get();
       
-      return querySnapshot.docs
-          .map((doc) => doc.data()['targetUserId'] as String)
-          .toSet();
+      final likedUsers = <String>{};
+      for (var doc in querySnapshot.docs) {
+        final action = doc.data()['action'] as String?;
+        if (action == 'like') {
+          final targetUserId = doc.data()['targetUserId'] as String?;
+          if (targetUserId != null) {
+            likedUsers.add(targetUserId);
+          }
+        }
+      }
+      
+      return likedUsers;
           
     } catch (e) {
-      debugPrint('Error getting interacted users: $e');
       return <String>{};
     }
   }
@@ -174,12 +178,12 @@ class InteractionService {
   Future<List<String>> getUserMatches(String userId) async {
     try {
       final querySnapshot = await _firestore
-          .collection('matches')
+          .collection(_matchesCollection)
           .where('user1Id', isEqualTo: userId)
           .get();
       
       final querySnapshot2 = await _firestore
-          .collection('matches')
+          .collection(_matchesCollection)
           .where('user2Id', isEqualTo: userId)
           .get();
       
@@ -196,8 +200,27 @@ class InteractionService {
       return matches;
       
     } catch (e) {
-      debugPrint('Error getting user matches: $e');
       return [];
+    }
+  }
+
+  /// Check if current user has already liked a target user
+  Future<bool> hasLikedUser({
+    required String currentUserId,
+    required String targetUserId,
+  }) async {
+    try {
+      final interactionDoc = await _firestore
+          .collection(_userInteractionsCollection)
+          .doc('${currentUserId}_$targetUserId')
+          .get();
+      
+      if (!interactionDoc.exists) return false;
+      
+      final action = interactionDoc.data()?['action'] as String?;
+      return action == 'like';
+    } catch (e) {
+      return false;
     }
   }
 }

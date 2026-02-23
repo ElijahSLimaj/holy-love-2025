@@ -3,6 +3,7 @@ class UserProfile {
   final String firstName;
   final String lastName;
   final int age;
+  final String gender; // 'male' or 'female'
   final String location;
   final double? latitude;
   final double? longitude;
@@ -32,6 +33,7 @@ class UserProfile {
     required this.firstName,
     required this.lastName,
     required this.age,
+    required this.gender,
     required this.location,
     this.latitude,
     this.longitude,
@@ -92,6 +94,7 @@ class UserProfile {
       'firstName': firstName,
       'lastName': lastName,
       'age': age,
+      'gender': gender,
       'location': location,
       'photoUrls': photoUrls,
       'bio': bio,
@@ -122,6 +125,7 @@ class UserProfile {
       firstName: json['firstName'],
       lastName: json['lastName'],
       age: json['age'],
+      gender: json['gender'] ?? '',
       location: json['location'],
       photoUrls: List<String>.from(json['photoUrls']),
       bio: json['bio'],
@@ -150,13 +154,37 @@ class UserProfile {
     dynamic profileData,
     dynamic profileDetails,
   ) {
-    final photoUrls = profileDetails?.photoUrls ?? <String>[];
+    // Combine mainPhotoUrl with photoUrls array, avoiding duplicates
+    final detailsPhotoUrls = profileDetails?.photoUrls ?? <String>[];
+    final mainPhotoUrl = profileData.mainPhotoUrl;
+
+    final photoUrls = <String>[];
+    // Add main photo first if it exists
+    if (mainPhotoUrl != null && mainPhotoUrl.isNotEmpty) {
+      photoUrls.add(mainPhotoUrl);
+    }
+    // Add remaining photos, avoiding duplicates
+    for (final url in detailsPhotoUrls) {
+      if (!photoUrls.contains(url)) {
+        photoUrls.add(url);
+      }
+    }
+
+    // Handle gender with fallback for existing profiles without gender data
+    String gender = '';
+    try {
+      gender = profileData.gender ?? '';
+    } catch (_) {
+      // Fallback if gender property doesn't exist on older data
+      gender = '';
+    }
 
     return UserProfile(
       id: profileData.userId,
       firstName: profileData.firstName,
       lastName: profileData.lastName,
       age: profileData.age,
+      gender: gender,
       location: profileData.location,
       latitude: profileData.geoLocation?.latitude,
       longitude: profileData.geoLocation?.longitude,
@@ -188,6 +216,7 @@ class UserProfile {
     String? firstName,
     String? lastName,
     int? age,
+    String? gender,
     String? location,
     List<String>? photoUrls,
     String? bio,
@@ -215,6 +244,7 @@ class UserProfile {
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       age: age ?? this.age,
+      gender: gender ?? this.gender,
       location: location ?? this.location,
       photoUrls: photoUrls ?? this.photoUrls,
       bio: bio ?? this.bio,

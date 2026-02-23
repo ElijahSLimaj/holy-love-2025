@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import '../models/user_stats.dart';
 
 class StatsRepository {
@@ -28,7 +27,6 @@ class StatsRepository {
       final existingStats = await statsRef.get();
 
       if (existingStats.exists) {
-        debugPrint('User stats already exist for: $userId');
         return;
       }
 
@@ -36,9 +34,7 @@ class StatsRepository {
       await statsRef.set(stats.toFirestore());
 
       _cacheStats(userId, stats);
-      debugPrint('Initialized user stats for: $userId');
     } catch (e) {
-      debugPrint('Error initializing user stats: $e');
       rethrow;
     }
   }
@@ -61,7 +57,6 @@ class StatsRepository {
 
       return stats;
     } catch (e) {
-      debugPrint('Error getting user stats: $e');
       return null;
     }
   }
@@ -83,29 +78,41 @@ class StatsRepository {
 
   Future<void> incrementLikes(String userId) async {
     try {
-      await _firestore.collection(_statsCollection).doc(userId).update({
+      final statsRef = _firestore.collection(_statsCollection).doc(userId);
+      final doc = await statsRef.get();
+      
+      if (!doc.exists) {
+        await initializeUserStats(userId);
+      }
+      
+      await statsRef.update({
         'totalLikes': FieldValue.increment(1),
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
       _clearUserCache(userId);
-      debugPrint('Incremented likes for user: $userId');
     } catch (e) {
-      debugPrint('Error incrementing likes: $e');
+      // Silently fail - stats are not critical
     }
   }
 
   Future<void> incrementLikesReceived(String userId) async {
     try {
-      await _firestore.collection(_statsCollection).doc(userId).update({
+      final statsRef = _firestore.collection(_statsCollection).doc(userId);
+      final doc = await statsRef.get();
+      
+      if (!doc.exists) {
+        await initializeUserStats(userId);
+      }
+      
+      await statsRef.update({
         'totalLikesReceived': FieldValue.increment(1),
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
       _clearUserCache(userId);
-      debugPrint('Incremented likes received for user: $userId');
     } catch (e) {
-      debugPrint('Error incrementing likes received: $e');
+      // Silently fail - stats are not critical
     }
   }
 
@@ -117,9 +124,8 @@ class StatsRepository {
       });
 
       _clearUserCache(userId);
-      debugPrint('Incremented matches for user: $userId');
     } catch (e) {
-      debugPrint('Error incrementing matches: $e');
+      // Silently fail
     }
   }
 
@@ -131,9 +137,8 @@ class StatsRepository {
       });
 
       _clearUserCache(userId);
-      debugPrint('Incremented profile views for user: $userId');
     } catch (e) {
-      debugPrint('Error incrementing profile views: $e');
+      // Silently fail
     }
   }
 
@@ -146,7 +151,7 @@ class StatsRepository {
 
       _clearUserCache(userId);
     } catch (e) {
-      debugPrint('Error incrementing messages received: $e');
+      // Silently fail
     }
   }
 
@@ -159,7 +164,7 @@ class StatsRepository {
 
       _clearUserCache(userId);
     } catch (e) {
-      debugPrint('Error incrementing messages sent: $e');
+      // Silently fail
     }
   }
 
@@ -172,7 +177,7 @@ class StatsRepository {
 
       _clearUserCache(userId);
     } catch (e) {
-      debugPrint('Error updating last active: $e');
+      // Silently fail
     }
   }
 
@@ -184,9 +189,7 @@ class StatsRepository {
       });
 
       _clearUserCache(userId);
-      debugPrint('Updated verification status for user: $userId');
     } catch (e) {
-      debugPrint('Error updating verification status: $e');
       rethrow;
     }
   }
@@ -199,9 +202,7 @@ class StatsRepository {
       });
 
       _clearUserCache(userId);
-      debugPrint('Updated premium status for user: $userId');
     } catch (e) {
-      debugPrint('Error updating premium status: $e');
       rethrow;
     }
   }

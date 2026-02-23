@@ -9,6 +9,7 @@ class AnimatedBottomNavBar extends StatefulWidget {
   final int currentIndex;
   final Function(int) onTap;
   final List<Animation<double>> animations;
+  final List<int?> badgeCounts;
 
   const AnimatedBottomNavBar({
     super.key,
@@ -16,6 +17,7 @@ class AnimatedBottomNavBar extends StatefulWidget {
     required this.currentIndex,
     required this.onTap,
     required this.animations,
+    this.badgeCounts = const [null, null, null, null],
   });
 
   @override
@@ -134,24 +136,58 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    AnimatedBuilder(
-                      animation: _selectionAnimation,
-                      builder: (context, child) {
-                        return Transform.scale(
-                          scale: isSelected
-                              ? 1.0 +
-                                  (0.2 *
-                                      _selectionAnimation.value.clamp(0.0, 1.0))
-                              : 1.0,
-                          child: Icon(
-                            isSelected ? tab.activeIcon : tab.icon,
-                            color: isSelected
-                                ? AppColors.white
-                                : AppColors.textSecondary,
-                            size: 22,
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        AnimatedBuilder(
+                          animation: _selectionAnimation,
+                          builder: (context, child) {
+                            return Transform.scale(
+                              scale: isSelected
+                                  ? 1.0 +
+                                      (0.2 *
+                                          _selectionAnimation.value.clamp(0.0, 1.0))
+                                  : 1.0,
+                              child: Icon(
+                                isSelected ? tab.activeIcon : tab.icon,
+                                color: isSelected
+                                    ? AppColors.white
+                                    : AppColors.textSecondary,
+                                size: 22,
+                              ),
+                            );
+                          },
+                        ),
+                        if (widget.badgeCounts[index] != null &&
+                            widget.badgeCounts[index]! > 0)
+                          Positioned(
+                            right: -8,
+                            top: -4,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                gradient: AppColors.loveGradient,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 18,
+                                minHeight: 18,
+                              ),
+                              child: Text(
+                                widget.badgeCounts[index]! > 99
+                                    ? '99+'
+                                    : widget.badgeCounts[index].toString(),
+                                style: const TextStyle(
+                                  color: AppColors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.0,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
                           ),
-                        );
-                      },
+                      ],
                     ),
                     const SizedBox(height: AppDimensions.spacing2),
                     AnimatedDefaultTextStyle(

@@ -9,6 +9,7 @@ class MessageBubble extends StatefulWidget {
   final bool showAvatar;
   final UserProfile user;
   final bool isFromCurrentUser;
+  final bool isPremium;
 
   const MessageBubble({
     super.key,
@@ -16,6 +17,7 @@ class MessageBubble extends StatefulWidget {
     required this.showAvatar,
     required this.user,
     required this.isFromCurrentUser,
+    this.isPremium = false,
   });
 
   @override
@@ -249,7 +251,8 @@ class _MessageBubbleState extends State<MessageBubble>
           Icons.done_all,
           size: 14,
         );
-        statusColor = AppColors.primary;
+        // Pro-only: show blue read indicator. Free users see gray (delivered).
+        statusColor = widget.isPremium ? AppColors.primary : AppColors.textTertiary;
         break;
       case MessageStatus.failed:
         statusIcon = const Icon(

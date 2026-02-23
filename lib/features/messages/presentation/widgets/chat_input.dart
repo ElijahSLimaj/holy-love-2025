@@ -27,7 +27,6 @@ class _ChatInputState extends State<ChatInput> with TickerProviderStateMixin {
   late AnimationController _sendButtonController;
   late AnimationController _attachmentController;
   late Animation<double> _sendButtonScaleAnimation;
-  late Animation<double> _sendButtonRotationAnimation;
   late Animation<double> _attachmentFadeAnimation;
 
   bool _hasText = false;
@@ -57,14 +56,6 @@ class _ChatInputState extends State<ChatInput> with TickerProviderStateMixin {
     ).animate(CurvedAnimation(
       parent: _sendButtonController,
       curve: Curves.easeOutBack,
-    ));
-
-    _sendButtonRotationAnimation = Tween<double>(
-      begin: 0.0,
-      end: 0.25,
-    ).animate(CurvedAnimation(
-      parent: _sendButtonController,
-      curve: Curves.easeInOut,
     ));
 
     _attachmentFadeAnimation = Tween<double>(
@@ -112,7 +103,7 @@ class _ChatInputState extends State<ChatInput> with TickerProviderStateMixin {
         Container(
           padding: const EdgeInsets.all(AppDimensions.paddingL),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _buildAttachmentButton(),
               const SizedBox(width: AppDimensions.spacing12),
@@ -206,8 +197,6 @@ class _ChatInputState extends State<ChatInput> with TickerProviderStateMixin {
       builder: (context, child) {
         return Transform.scale(
           scale: _sendButtonScaleAnimation.value,
-          child: Transform.rotate(
-            angle: _sendButtonRotationAnimation.value * 3.14159 * 2,
             child: GestureDetector(
               onTap: _hasText ? _handleSend : null,
               child: Container(
@@ -231,7 +220,6 @@ class _ChatInputState extends State<ChatInput> with TickerProviderStateMixin {
                   Icons.send_rounded,
                   color: _hasText ? AppColors.white : AppColors.textTertiary,
                   size: AppDimensions.iconM,
-                ),
               ),
             ),
           ),

@@ -6,12 +6,14 @@ class ProfileStatsCard extends StatefulWidget {
   final int likes;
   final int matches;
   final int views;
+  final VoidCallback? onViewsTap;
 
   const ProfileStatsCard({
     super.key,
     required this.likes,
     required this.matches,
     required this.views,
+    this.onViewsTap,
   });
 
   @override
@@ -168,11 +170,14 @@ class _ProfileStatsCardState extends State<ProfileStatsCard>
                 color: AppColors.border.withOpacity(0.3),
               ),
               Expanded(
-                child: _buildStatItem(
-                  animation: _counterAnimations[2],
-                  icon: Icons.visibility,
-                  label: 'Views',
-                  color: AppColors.primary,
+                child: GestureDetector(
+                  onTap: widget.onViewsTap,
+                  child: _buildStatItem(
+                    animation: _counterAnimations[2],
+                    icon: Icons.visibility,
+                    label: 'Views',
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
             ],

@@ -106,19 +106,23 @@ class _MessagesScreenState extends State<MessagesScreen>
       final conversationItems = <ConversationItem>[];
 
       for (var conversation in conversations) {
-        final otherUserId = conversation.getOtherParticipantId(_currentUserId!);
-        final profile = await _profileRepository.getProfile(otherUserId);
+        try {
+          final otherUserId = conversation.getOtherParticipantId(_currentUserId!);
+          final profile = await _profileRepository.getProfile(otherUserId);
 
-        if (profile != null) {
-          final userProfile = UserProfile.fromProfileData(
-            profile,
-            await _profileRepository.getProfileDetails(otherUserId),
-          );
+          if (profile != null) {
+            final details = await _profileRepository.getProfileDetails(otherUserId);
 
-          conversationItems.add(ConversationItem(
-            conversation: conversation,
-            user: userProfile,
-          ));
+            final userProfile = UserProfile.fromProfileData(profile, details);
+
+            conversationItems.add(ConversationItem(
+              conversation: conversation,
+              user: userProfile,
+            ));
+          }
+        } catch (e, stack) {
+          debugPrint('Error loading conversation profile: $e');
+          debugPrint('Stack: $stack');
         }
       }
 

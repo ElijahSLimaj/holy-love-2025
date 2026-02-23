@@ -8,6 +8,7 @@ class ProfileData {
   final String lastName;
   final int age;
   final DateTime birthDate;
+  final String gender; // 'male' or 'female'
   final String location;
   final GeoPoint? geoLocation;
   final String? locationCity;
@@ -36,6 +37,7 @@ class ProfileData {
     required this.lastName,
     required this.age,
     required this.birthDate,
+    required this.gender,
     required this.location,
     this.geoLocation,
     this.locationCity,
@@ -88,6 +90,7 @@ class ProfileData {
       'lastName': lastName,
       'age': age,
       'birthDate': Timestamp.fromDate(birthDate),
+      'gender': gender,
       'location': location,
       'geoLocation': geoLocation,
       'locationCity': locationCity,
@@ -109,7 +112,7 @@ class ProfileData {
     };
   }
 
-  factory ProfileData.fromFirestore(Map<String, dynamic> data) {
+  factory ProfileData.fromFirestore(Map<String, dynamic> data, {String? documentId}) {
     // Handle null timestamps safely
     final createdAt = data['createdAt'] != null
         ? (data['createdAt'] as Timestamp).toDate()
@@ -121,12 +124,19 @@ class ProfileData {
         ? (data['birthDate'] as Timestamp).toDate()
         : DateTime.now();
 
+    // Use documentId as fallback if userId is not in data
+    final storedUserId = data['userId'] as String?;
+    final userId = (storedUserId != null && storedUserId.isNotEmpty)
+        ? storedUserId
+        : (documentId ?? '');
+
     final profileData = ProfileData(
-      userId: data['userId'] ?? '',
+      userId: userId,
       firstName: data['firstName'] ?? '',
       lastName: data['lastName'] ?? '',
       age: data['age'] ?? 0,
       birthDate: birthDate,
+      gender: data['gender'] ?? '',
       location: data['location'] ?? '',
       geoLocation: data['geoLocation'] as GeoPoint?,
       locationCity: data['locationCity'],
@@ -152,6 +162,7 @@ class ProfileData {
     String? lastName,
     int? age,
     DateTime? birthDate,
+    String? gender,
     String? location,
     GeoPoint? geoLocation,
     String? locationCity,
@@ -175,6 +186,7 @@ class ProfileData {
       lastName: newLastName,
       age: newAge,
       birthDate: birthDate ?? this.birthDate,
+      gender: gender ?? this.gender,
       location: newLocation,
       geoLocation: geoLocation ?? this.geoLocation,
       locationCity: locationCity ?? this.locationCity,
@@ -200,6 +212,9 @@ class ProfileData {
 /// Extended profile data stored in subcollection for detailed view
 /// This separates frequently accessed data from detailed data
 class ProfileDetailsData {
+  // Gender (stored here for matching queries)
+  final String? gender; // 'male' or 'female'
+
   // Faith Information
   final String? denomination;
   final String? churchAttendance;
@@ -231,6 +246,7 @@ class ProfileDetailsData {
   final int? photoCount;
 
   ProfileDetailsData({
+    this.gender,
     this.denomination,
     this.churchAttendance,
     this.favoriteBibleVerse,
@@ -255,6 +271,7 @@ class ProfileDetailsData {
 
   Map<String, dynamic> toFirestore() {
     return {
+      'gender': gender,
       'denomination': denomination,
       'churchAttendance': churchAttendance,
       'favoriteBibleVerse': favoriteBibleVerse,
@@ -280,6 +297,7 @@ class ProfileDetailsData {
 
   factory ProfileDetailsData.fromFirestore(Map<String, dynamic> data) {
     return ProfileDetailsData(
+      gender: data['gender'],
       denomination: data['denomination'],
       churchAttendance: data['churchAttendance'],
       favoriteBibleVerse: data['favoriteBibleVerse'],

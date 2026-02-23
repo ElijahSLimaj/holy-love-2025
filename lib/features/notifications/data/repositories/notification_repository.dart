@@ -167,6 +167,38 @@ class NotificationRepository {
         .map((snapshot) => snapshot.size);
   }
 
+  Future<int> getUnreadMatchCount() async {
+    final userId = currentUserId;
+    if (userId == null) return 0;
+
+    try {
+      final snapshot = await _firestore
+          .collection(_notificationsCollection)
+          .where('userId', isEqualTo: userId)
+          .where('isRead', isEqualTo: false)
+          .where('type', isEqualTo: 'match')
+          .get();
+
+      return snapshot.size;
+    } catch (e) {
+      debugPrint('Error getting unread match count: $e');
+      return 0;
+    }
+  }
+
+  Stream<int> streamUnreadMatchCount() {
+    final userId = currentUserId;
+    if (userId == null) return Stream.value(0);
+
+    return _firestore
+        .collection(_notificationsCollection)
+        .where('userId', isEqualTo: userId)
+        .where('isRead', isEqualTo: false)
+        .where('type', isEqualTo: 'match')
+        .snapshots()
+        .map((snapshot) => snapshot.size);
+  }
+
   Future<void> markAsRead(String notificationId) async {
     try {
       await _firestore

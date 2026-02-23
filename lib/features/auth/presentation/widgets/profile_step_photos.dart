@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../profile/presentation/bloc/profile_creation_bloc.dart';
@@ -327,6 +329,25 @@ class _PhotoCardState extends State<PhotoCard> {
   XFile? get photoFile => _photoFile;
   File? get photoAsFile => _photoFile != null ? File(_photoFile!.path) : null;
 
+  @override
+  void dispose() {
+    // Clean up temporary file when widget is disposed
+    // Note: This will only delete if the photo hasn't been uploaded yet
+    // Uploaded photos are stored in Firebase, so we can safely delete local copies
+    if (_photoFile != null) {
+      try {
+        final file = File(_photoFile!.path);
+        file.delete().catchError((e) {
+          debugPrint('Error deleting temporary photo file on dispose: $e');
+          return file;
+        });
+      } catch (e) {
+        debugPrint('Error accessing photo file on dispose: $e');
+      }
+    }
+    super.dispose();
+  }
+
   void setPhoto(XFile? photo) {
     if (mounted) {
       setState(() {
@@ -354,12 +375,29 @@ class _PhotoCardState extends State<PhotoCard> {
 
       if (image != null) {
         // Verify the file exists immediately after selection
-        final file = File(image.path);
+        final originalFile = File(image.path);
         debugPrint('Selected image path: ${image.path}');
-        debugPrint('File exists immediately after selection: ${await file.exists()}');
+        debugPrint('File exists immediately after selection: ${await originalFile.exists()}');
+        
+        if (!await originalFile.exists()) {
+          throw Exception('Selected image file does not exist');
+        }
+
+        // Copy the file to a permanent location in the cache directory
+        // This prevents the file from being cleaned up by the system
+        final cacheDir = await getTemporaryDirectory();
+        final fileName = 'photo_${DateTime.now().millisecondsSinceEpoch}_${path.basename(image.path)}';
+        final permanentPath = path.join(cacheDir.path, fileName);
+        final permanentFile = await originalFile.copy(permanentPath);
+        
+        debugPrint('Copied image to permanent location: $permanentPath');
+        debugPrint('Permanent file exists: ${await permanentFile.exists()}');
+        
+        // Create a new XFile with the permanent path
+        final permanentXFile = XFile(permanentPath);
         
         setState(() {
-          _photoFile = image;
+          _photoFile = permanentXFile;
           _isLoading = false;
         });
 
@@ -371,6 +409,7 @@ class _PhotoCardState extends State<PhotoCard> {
         });
       }
     } catch (e) {
+      debugPrint('Error adding photo: $e');
       setState(() {
         _isLoading = false;
       });
@@ -378,8 +417,22 @@ class _PhotoCardState extends State<PhotoCard> {
     }
   }
 
-  void _removePhoto() {
+  void _removePhoto() async {
     HapticFeedback.mediumImpact();
+    
+    // Clean up the temporary file if it exists
+    if (_photoFile != null) {
+      try {
+        final file = File(_photoFile!.path);
+        if (await file.exists()) {
+          await file.delete();
+          debugPrint('Deleted temporary photo file: ${_photoFile!.path}');
+        }
+      } catch (e) {
+        debugPrint('Error deleting temporary photo file: $e');
+      }
+    }
+    
     setState(() {
       _photoFile = null;
     });

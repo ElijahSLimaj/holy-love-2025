@@ -36,6 +36,7 @@ class ProfileRepository {
     required String firstName,
     required String lastName,
     required int age,
+    required String gender,
     required String location,
     GeoPoint? geoLocation,
     String? locationCity,
@@ -61,13 +62,14 @@ class ProfileRepository {
 
     if (profileDoc.exists) {
       // Update existing profile
-      final existingData = ProfileData.fromFirestore(profileDoc.data()!);
+      final existingData = ProfileData.fromFirestore(profileDoc.data()!, documentId: profileDoc.id);
 
       final updatedData = existingData.copyWith(
         firstName: firstName,
         lastName: lastName,
         age: age,
         birthDate: birthDate,
+        gender: gender,
         location: location,
         geoLocation: geoLocation,
         locationCity: locationCity,
@@ -82,6 +84,9 @@ class ProfileRepository {
       );
 
       await _updateProfile(userId, updatedData);
+
+      // Also save gender to profileDetails for matching queries
+      await _saveGenderToDetails(userId, gender);
     } else {
       // Create new profile
       final profileData = ProfileData(
@@ -90,6 +95,7 @@ class ProfileRepository {
         lastName: lastName,
         age: age,
         birthDate: birthDate,
+        gender: gender,
         location: location,
         geoLocation: geoLocation,
         locationCity: locationCity,
@@ -109,7 +115,7 @@ class ProfileRepository {
         ageGroup: ProfileData.calculateAgeGroup(age),
       );
 
-      await _createProfile(userId, profileData);
+      await _createProfile(userId, profileData, gender);
     }
 
     // Clear cache for this user
@@ -117,7 +123,7 @@ class ProfileRepository {
   }
 
   /// Create a new profile with optimized batch write
-  Future<void> _createProfile(String userId, ProfileData profileData) async {
+  Future<void> _createProfile(String userId, ProfileData profileData, String gender) async {
     try {
       final batch = _firestore.batch();
 
@@ -126,13 +132,14 @@ class ProfileRepository {
       final profileDataMap = profileData.toFirestore();
       batch.set(profileRef, profileDataMap);
 
-      // Initialize profile details subcollection
+      // Initialize profile details subcollection with gender
       final detailsRef = _firestore
           .collection(_usersCollection)
           .doc(userId)
           .collection(_profileDetailsCollection)
           .doc('details');
       final detailsData = ProfileDetailsData(
+        gender: gender,
         interests: [],
         languages: [],
       ).toFirestore();
@@ -145,6 +152,7 @@ class ProfileRepository {
         'searchName': profileData.searchName,
         'age': profileData.age,
         'ageGroup': profileData.ageGroup,
+        'gender': gender,
         'location': profileData.location.toLowerCase(),
         'geoLocation': profileData.geoLocation,
         'isActive': true,
@@ -161,6 +169,22 @@ class ProfileRepository {
     }
   }
 
+  /// Save gender to profile details (for matching queries)
+  Future<void> _saveGenderToDetails(String userId, String gender) async {
+    try {
+      final detailsRef = _firestore
+          .collection(_usersCollection)
+          .doc(userId)
+          .collection(_profileDetailsCollection)
+          .doc('details');
+
+      await detailsRef.set({'gender': gender}, SetOptions(merge: true));
+    } catch (e) {
+      // Non-critical, log and continue
+      debugPrint('Error saving gender to details: $e');
+    }
+  }
+
   /// Update existing profile with minimal writes
   Future<void> _updateProfile(String userId, ProfileData profileData) async {
     try {
@@ -171,17 +195,20 @@ class ProfileRepository {
       final profileDataMap = profileData.toFirestore();
       batch.update(profileRef, profileDataMap);
 
-      // Update search index
+      // Update search index (create if doesn't exist)
       final searchIndexRef = _firestore.collection('searchIndex').doc(userId);
       final searchIndexData = {
+        'userId': userId,
         'searchName': profileData.searchName,
         'age': profileData.age,
         'ageGroup': profileData.ageGroup,
+        'gender': profileData.gender,
         'location': profileData.location.toLowerCase(),
         'geoLocation': profileData.geoLocation,
         'lastActive': FieldValue.serverTimestamp(),
+        'isActive': true,
       };
-      batch.update(searchIndexRef, searchIndexData);
+      batch.set(searchIndexRef, searchIndexData, SetOptions(merge: true));
 
       await batch.commit();
 
@@ -207,7 +234,7 @@ class ProfileRepository {
         return null;
       }
 
-      final profile = ProfileData.fromFirestore(doc.data()!);
+      final profile = ProfileData.fromFirestore(doc.data()!, documentId: doc.id);
 
       // Cache the profile
       _cacheProfile(userId, profile);
@@ -255,7 +282,7 @@ class ProfileRepository {
         .map((snapshot) {
       if (!snapshot.exists) return null;
 
-      final profile = ProfileData.fromFirestore(snapshot.data()!);
+      final profile = ProfileData.fromFirestore(snapshot.data()!, documentId: snapshot.id);
       _cacheProfile(userId, profile);
 
       return profile;
@@ -401,7 +428,7 @@ class ProfileRepository {
       };
       batch.update(profileRef, profileUpdates);
 
-      // Save all photo URLs to profile details
+      // Save all photo URLs to profile details (create if doesn't exist)
       final detailsRef = _firestore
           .collection(_usersCollection)
           .doc(userId)
@@ -414,16 +441,17 @@ class ProfileRepository {
         'photoCount': photoUrls.length,
         'lastPhotoUpdate': FieldValue.serverTimestamp(),
       };
-      batch.update(detailsRef, detailsUpdates);
+      batch.set(detailsRef, detailsUpdates, SetOptions(merge: true));
 
-      // Update search index with main photo
+      // Update search index with main photo (create if doesn't exist)
       final searchIndexRef = _firestore.collection('searchIndex').doc(userId);
       final searchUpdates = {
+        'userId': userId,
         'mainPhotoUrl': mainPhotoUrl,
         'hasPhotos': photoUrls.isNotEmpty,
         'photoCount': photoUrls.length,
       };
-      batch.update(searchIndexRef, searchUpdates);
+      batch.set(searchIndexRef, searchUpdates, SetOptions(merge: true));
 
       await batch.commit();
 
@@ -474,7 +502,7 @@ class ProfileRepository {
       };
       batch.update(profileRef, profileUpdates);
 
-      // Save faith info to profile details
+      // Save faith info to profile details (create if doesn't exist)
       final detailsRef = _firestore
           .collection(_usersCollection)
           .doc(userId)
@@ -488,16 +516,17 @@ class ProfileRepository {
         'faithStory': faithStory,
         'lastFaithUpdate': FieldValue.serverTimestamp(),
       };
-      batch.update(detailsRef, detailsUpdates);
+      batch.set(detailsRef, detailsUpdates, SetOptions(merge: true));
 
-      // Update search index with faith info for matching
+      // Update search index with faith info for matching (create if doesn't exist)
       final searchIndexRef = _firestore.collection('searchIndex').doc(userId);
       final searchUpdates = {
+        'userId': userId,
         'denomination': denomination,
         'churchAttendance': churchAttendance,
         'hasFaithInfo': denomination != null || churchAttendance != null,
       };
-      batch.update(searchIndexRef, searchUpdates);
+      batch.set(searchIndexRef, searchUpdates, SetOptions(merge: true));
 
       await batch.commit();
 
@@ -547,7 +576,7 @@ class ProfileRepository {
       };
       batch.update(profileRef, profileUpdates);
 
-      // Save about info to profile details
+      // Save about info to profile details (create if doesn't exist)
       final detailsRef = _firestore
           .collection(_usersCollection)
           .doc(userId)
@@ -560,17 +589,18 @@ class ProfileRepository {
         'relationshipGoal': relationshipGoal,
         'lastAboutUpdate': FieldValue.serverTimestamp(),
       };
-      batch.update(detailsRef, detailsUpdates);
+      batch.set(detailsRef, detailsUpdates, SetOptions(merge: true));
 
-      // Update search index with about info for matching
+      // Update search index with about info for matching (create if doesn't exist)
       final searchIndexRef = _firestore.collection('searchIndex').doc(userId);
       final searchUpdates = {
+        'userId': userId,
         'interests': interests,
         'relationshipGoal': relationshipGoal,
         'hasAboutInfo': bio != null && bio.isNotEmpty,
         'interestCount': interests.length,
       };
-      batch.update(searchIndexRef, searchUpdates);
+      batch.set(searchIndexRef, searchUpdates, SetOptions(merge: true));
 
       await batch.commit();
 
@@ -623,7 +653,7 @@ class ProfileRepository {
       };
       batch.update(profileRef, profileUpdates);
 
-      // Save preferences to profile details
+      // Save preferences to profile details (create if doesn't exist)
       final detailsRef = _firestore
           .collection(_usersCollection)
           .doc(userId)
@@ -642,11 +672,12 @@ class ProfileRepository {
         'preferences': preferencesData,
         'lastPreferencesUpdate': FieldValue.serverTimestamp(),
       };
-      batch.update(detailsRef, detailsUpdates);
+      batch.set(detailsRef, detailsUpdates, SetOptions(merge: true));
 
-      // Update search index with preferences for matching
+      // Update search index with preferences for matching (create if doesn't exist)
       final searchIndexRef = _firestore.collection('searchIndex').doc(userId);
       final searchUpdates = {
+        'userId': userId,
         'ageRangeMin': ageRangeMin,
         'ageRangeMax': ageRangeMax,
         'maxDistance': maxDistance,
@@ -654,7 +685,7 @@ class ProfileRepository {
         'dealBreakers': dealBreakers,
         'profileComplete': true,
       };
-      batch.update(searchIndexRef, searchUpdates);
+      batch.set(searchIndexRef, searchUpdates, SetOptions(merge: true));
 
       await batch.commit();
 

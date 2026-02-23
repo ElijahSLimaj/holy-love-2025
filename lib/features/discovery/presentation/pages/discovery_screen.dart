@@ -13,6 +13,11 @@ import '../widgets/match_modal.dart';
 import 'member_profile_screen.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../messages/presentation/pages/chat_screen.dart';
+import '../../../subscription/data/services/subscription_service.dart';
+import '../../../subscription/data/services/profile_view_service.dart';
+import '../../../subscription/presentation/pages/paywall_screen.dart';
+import '../../../notifications/data/repositories/notification_repository.dart';
+import '../../../profile/data/repositories/profile_repository.dart';
 
 enum ViewMode { list, swipe }
 
@@ -40,13 +45,23 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   final Set<String> _likedProfiles = {};
   final Set<String> _passedProfiles = {};
   final GlobalKey<SwipeableCardStackState> _cardStackKey = GlobalKey();
-  
+  final Map<String, PageController> _photoPageControllers = {};
+  final Map<String, int> _currentPhotoIndexes = {};
+
   // Matching services
   late MatchingService _matchingService;
   late InteractionService _interactionService;
-  
+  late SubscriptionService _subscriptionService;
+  late ProfileViewService _profileViewService;
+  final NotificationRepository _notificationRepository = NotificationRepository();
+  final ProfileRepository _profileRepository = ProfileRepository();
+
   bool _isLoading = true;
   String? _currentUserId;
+  bool _isPremium = false;
+  int _remainingViews = 5;
+  int _remainingLikes = 5;
+  int _remainingPasses = 5;
 
   @override
   void initState() {
@@ -55,6 +70,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     // Initialize services
     _matchingService = MatchingService();
     _interactionService = InteractionService();
+    _subscriptionService = SubscriptionService();
+    _profileViewService = ProfileViewService();
     
     // Initialize with empty profiles
     _profiles = [];
@@ -85,9 +102,31 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       curve: Curves.easeOutBack,
     ));
 
-    // Load real matches
+    // Load existing likes first, then matches
+    _loadExistingLikes().then((_) {
     _loadMatches();
+    });
     _startAnimations();
+  }
+  
+  /// Load existing likes from database to populate _likedProfiles set
+  Future<void> _loadExistingLikes() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState.status != AuthStatus.authenticated) return;
+    
+    _currentUserId = authState.user.id;
+    if (_currentUserId == null) return;
+    
+    try {
+      final likedUsers = await _interactionService.getInteractedUsers(_currentUserId!);
+      if (mounted) {
+        setState(() {
+          _likedProfiles.addAll(likedUsers);
+        });
+      }
+    } catch (e) {
+      // Silently fail
+    }
   }
 
   /// Load potential matches using the matching service
@@ -96,7 +135,6 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       // Get current user ID
       final authState = context.read<AuthBloc>().state;
       if (authState.status != AuthStatus.authenticated) {
-        debugPrint('User not authenticated');
         // No fallback to mock data - show empty state
         if (mounted) {
           setState(() {
@@ -108,7 +146,6 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       }
 
       _currentUserId = authState.user.id;
-      debugPrint('Loading matches for user: $_currentUserId');
 
       // Find potential matches
       final matches = await _matchingService.findMatches(
@@ -116,7 +153,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         limit: 20,
       );
 
-      debugPrint('Found ${matches.length} potential matches');
+      // Load subscription status
+      await _loadSubscriptionStatus();
 
       if (mounted) {
         setState(() {
@@ -125,7 +163,6 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         });
       }
     } catch (e) {
-      debugPrint('Error loading matches: $e');
       // Show empty state on error - no mock data fallback
       if (mounted) {
         setState(() {
@@ -133,6 +170,40 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _loadSubscriptionStatus() async {
+    if (_currentUserId == null) return;
+    try {
+      final premium = await _subscriptionService.isPremium(_currentUserId!);
+      final usage = await _subscriptionService.getDailyUsage(_currentUserId!);
+      if (mounted) {
+        setState(() {
+          _isPremium = premium;
+          _remainingViews = premium ? -1 : usage.remainingProfileViews;
+          _remainingLikes = premium ? -1 : usage.remainingLikes;
+          _remainingPasses = premium ? -1 : usage.remainingPasses;
+        });
+      }
+    } catch (e) {
+      // Silently fail — default to free tier limits
+    }
+  }
+
+  Future<void> _refreshUsageCounts() async {
+    if (_currentUserId == null || _isPremium) return;
+    try {
+      final usage = await _subscriptionService.getDailyUsage(_currentUserId!);
+      if (mounted) {
+        setState(() {
+          _remainingViews = usage.remainingProfileViews;
+          _remainingLikes = usage.remainingLikes;
+          _remainingPasses = usage.remainingPasses;
+        });
+      }
+    } catch (e) {
+      // Silently fail
     }
   }
 
@@ -165,56 +236,104 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     _listAnimationController.dispose();
     _headerAnimationController.dispose();
     _scrollController.dispose();
+    for (var controller in _photoPageControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
+  PageController _getPhotoController(String profileId) {
+    if (!_photoPageControllers.containsKey(profileId)) {
+      _photoPageControllers[profileId] = PageController();
+      _currentPhotoIndexes[profileId] = 0;
+    }
+    return _photoPageControllers[profileId]!;
+  }
+
   void _onLike(UserProfile profile) async {
+    // Gate: check like limit for free users
+    if (_currentUserId != null && !_isPremium) {
+      final canLike = await _subscriptionService.canLike(_currentUserId!);
+      if (!canLike) {
+        if (mounted) PaywallScreen.show(context, PaywallTrigger.likes);
+        return;
+      }
+    }
+
     HapticFeedback.lightImpact();
     setState(() {
       _likedProfiles.add(profile.id);
     });
-    
+
     if (_currentUserId != null) {
       try {
         final isMatch = await _interactionService.likeUser(
           currentUserId: _currentUserId!,
           targetUserId: profile.id,
         );
-        
+
+        // Record usage for free users
+        await _subscriptionService.recordLike(_currentUserId!);
+        _refreshUsageCounts();
+
         if (isMatch && mounted) {
           _showMatchDialog(profile);
         }
       } catch (e) {
-        debugPrint('Error recording like: $e');
+        // Silently fail
       }
     }
   }
 
   void _onPass(UserProfile profile) async {
+    // Gate: check pass limit for free users
+    if (_currentUserId != null && !_isPremium) {
+      final canPass = await _subscriptionService.canPass(_currentUserId!);
+      if (!canPass) {
+        if (mounted) PaywallScreen.show(context, PaywallTrigger.passes);
+        return;
+      }
+    }
+
     HapticFeedback.selectionClick();
     setState(() {
       _passedProfiles.add(profile.id);
     });
-    
+
     if (_currentUserId != null) {
       try {
         await _interactionService.passUser(
           currentUserId: _currentUserId!,
           targetUserId: profile.id,
         );
+
+        // Record usage for free users
+        await _subscriptionService.recordPass(_currentUserId!);
+        _refreshUsageCounts();
       } catch (e) {
-        debugPrint('Error recording pass: $e');
+        // Silently fail
       }
     }
   }
 
-  void _onProfileTap(UserProfile profile) {
+  void _onProfileTap(UserProfile profile) async {
+    // Gate: check profile view limit for free users
+    if (_currentUserId != null && !_isPremium) {
+      final canView = await _subscriptionService.canViewProfile(_currentUserId!);
+      if (!canView) {
+        if (mounted) PaywallScreen.show(context, PaywallTrigger.profileViews);
+        return;
+      }
+    }
+
     HapticFeedback.selectionClick();
+    final isLiked = _likedProfiles.contains(profile.id);
     Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
             MemberProfileScreen(
           user: profile,
+          initialLikedState: isLiked,
           onLike: () => _onLike(profile),
           onPass: () => _onPass(profile),
         ),
@@ -233,6 +352,28 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         transitionDuration: const Duration(milliseconds: 500),
       ),
     );
+
+    // Record profile view after navigation
+    if (_currentUserId != null) {
+      _subscriptionService.recordProfileView(_currentUserId!);
+      _refreshUsageCounts();
+
+      // Track the view and notify the viewed user
+      _profileViewService.recordView(
+        viewerId: _currentUserId!,
+        viewedUserId: profile.id,
+      );
+      final currentProfile = await _profileRepository.getProfile(_currentUserId!);
+      final viewerName = currentProfile != null
+          ? '${currentProfile.firstName} ${currentProfile.lastName}'
+          : '';
+      _notificationRepository.createProfileViewNotification(
+        userId: profile.id,
+        viewerId: _currentUserId!,
+        viewerName: viewerName,
+        viewerPhoto: currentProfile?.mainPhotoUrl,
+      );
+    }
   }
 
   /// Show match celebration dialog
@@ -370,6 +511,29 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                       ),
                     ],
                   ),
+                  if (!_isPremium) ...[
+                    const SizedBox(height: AppDimensions.spacing8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.paddingM,
+                        vertical: AppDimensions.paddingXS,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+                        border: Border.all(
+                          color: AppColors.accent.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        '$_remainingViews views · $_remainingLikes likes · $_remainingPasses passes left today',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.accent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -574,43 +738,97 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
-  Widget _buildPhotoSection(UserProfile profile) {
+  Widget _buildPhotoPlaceholder() {
     return Container(
-      height: 300,
       width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.lightGray,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(AppDimensions.radiusXL),
-          topRight: Radius.circular(AppDimensions.radiusXL),
+      height: 300,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.lightGray,
+            AppColors.lightGray.withOpacity(0.8),
+          ],
         ),
       ),
-      child: Stack(
-        children: [
-          // Photo placeholder
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  AppColors.lightGray,
-                  AppColors.lightGray.withOpacity(0.8),
-                ],
+      child: const Icon(
+        Icons.person,
+        size: 80,
+        color: AppColors.textSecondary,
+      ),
+    );
+  }
+
+  Widget _buildPhotoSection(UserProfile profile) {
+    final currentPhotoIndex = _currentPhotoIndexes[profile.id] ?? 0;
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(AppDimensions.radiusXL),
+        topRight: Radius.circular(AppDimensions.radiusXL),
+      ),
+      child: SizedBox(
+        height: 300,
+        width: double.infinity,
+        child: Stack(
+          children: [
+            // Profile photo or placeholder with PageView for multiple photos
+            if (profile.photoUrls.isNotEmpty)
+              PageView.builder(
+                controller: _getPhotoController(profile.id),
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentPhotoIndexes[profile.id] = index;
+                  });
+                },
+                itemCount: profile.photoUrls.length,
+                itemBuilder: (context, index) {
+                  return Image.network(
+                    profile.photoUrls[index],
+                    width: double.infinity,
+                    height: 300,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _buildPhotoPlaceholder();
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return _buildPhotoPlaceholder();
+                    },
+                  );
+                },
+              )
+            else
+              _buildPhotoPlaceholder(),
+            // Photo indicators
+            if (profile.photoUrls.length > 1)
+              Positioned(
+                top: AppDimensions.spacing16,
+                left: AppDimensions.spacing16,
+                right: AppDimensions.spacing16,
+                child: Row(
+                  children: List.generate(
+                    profile.photoUrls.length,
+                    (index) => Expanded(
+                      child: Container(
+                        height: 3,
+                        margin: EdgeInsets.only(
+                          right: index < profile.photoUrls.length - 1
+                              ? AppDimensions.spacing4
+                              : 0,
+                        ),
+                        decoration: BoxDecoration(
+                          color: currentPhotoIndex == index
+                              ? AppColors.white
+                              : AppColors.white.withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppDimensions.radiusXL),
-                topRight: Radius.circular(AppDimensions.radiusXL),
-              ),
-            ),
-            child: const Icon(
-              Icons.person,
-              size: 80,
-              color: AppColors.textSecondary,
-            ),
-          ),
           // Gradient overlay
           Positioned(
             bottom: 0,
@@ -695,6 +913,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
             ),
           ),
         ],
+        ),
       ),
     );
   }

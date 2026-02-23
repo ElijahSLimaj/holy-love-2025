@@ -17,6 +17,8 @@ import '../../data/repositories/stats_repository.dart';
 import '../../data/models/profile_data.dart';
 import '../../data/models/user_stats.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../subscription/presentation/pages/paywall_screen.dart';
+import '../../../subscription/presentation/pages/who_viewed_me_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -45,8 +47,6 @@ class _ProfileScreenState extends State<ProfileScreen>
   final int maxPhotos = 6;
 
   final Map<String, dynamic> _staticData = {
-    'isVerified': false,
-    'isPremium': false,
     'maxPhotos': 6,
   };
 
@@ -330,7 +330,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
           ),
         ),
-        if ((_profileData?.profileComplete ?? false) && (_staticData['isVerified'] ?? false))
+        if ((_profileData?.profileComplete ?? false) && (_userStats?.isVerified ?? false))
           Positioned(
             bottom: 0,
             right: 0,
@@ -370,7 +370,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     final age = _profileData?.age ?? 0;
     final location = _profileData?.location ?? 'Unknown Location';
     final occupation = _profileDetails?.occupation ?? 'Not specified';
-    final isPremium = _staticData['isPremium'] ?? false;
+    final isPremium = _userStats?.isPremium ?? false;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -474,7 +474,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildVerificationBadge() {
-    final isVerified = _staticData['isVerified'] ?? false;
+    final isVerified = _userStats?.isVerified ?? false;
     final isProfileComplete = _profileData?.profileComplete ?? false;
     
     return Container(
@@ -523,6 +523,24 @@ class _ProfileScreenState extends State<ProfileScreen>
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Photo Gallery
+          if (_profileDetails?.photoUrls?.isNotEmpty == true)
+            AnimatedBuilder(
+              animation: _cardAnimations[0],
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _cardAnimations[0].value,
+                  child: Opacity(
+                    opacity: _cardAnimations[0].value.clamp(0.0, 1.0),
+                    child: _buildPhotoGallery(),
+                  ),
+                );
+              },
+            ),
+
+          if (_profileDetails?.photoUrls?.isNotEmpty == true)
+            const SizedBox(height: AppDimensions.spacing24),
+
           // Profile Stats
           AnimatedBuilder(
             animation: _cardAnimations[0],
@@ -535,6 +553,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                     likes: _userStats?.totalLikesReceived ?? 0,
                     matches: _userStats?.totalMatches ?? 0,
                     views: _userStats?.profileViews ?? 0,
+                    onViewsTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const WhoViewedMeScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ),
               );
@@ -698,9 +724,18 @@ class _ProfileScreenState extends State<ProfileScreen>
       {
         'icon': Icons.star,
         'title': AppStrings.subscriptionSettings,
-        'subtitle': 'Manage your premium subscription',
-        'color': AppColors.success,
-        'onTap': () => _showComingSoon('Subscription settings'),
+        'subtitle': _userStats?.isPremium == true
+            ? 'Manage your Pro subscription'
+            : 'Upgrade to Holy Love Pro',
+        'color': AppColors.accent,
+        'onTap': () {
+          HapticFeedback.lightImpact();
+          if (_userStats?.isPremium == true) {
+            _showComingSoon('Subscription management');
+          } else {
+            PaywallScreen.show(context, PaywallTrigger.profileViews);
+          }
+        },
       },
       {
         'icon': Icons.help,
@@ -1009,5 +1044,228 @@ class _ProfileScreenState extends State<ProfileScreen>
       default:
         return dealBreaker;
     }
+  }
+
+  Widget _buildPhotoGallery() {
+    final photoUrls = _profileDetails?.photoUrls ?? [];
+    if (photoUrls.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.paddingL),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppDimensions.spacing8),
+                decoration: const BoxDecoration(
+                  gradient: AppColors.loveGradient,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.photo_library,
+                  color: AppColors.white,
+                  size: AppDimensions.iconS,
+                ),
+              ),
+              const SizedBox(width: AppDimensions.spacing12),
+              Expanded(
+                child: Text(
+                  'My Photos',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.paddingM,
+                  vertical: AppDimensions.paddingS,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                ),
+                child: Text(
+                  '${photoUrls.length}/$maxPhotos',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.spacing20),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: AppDimensions.spacing12,
+              mainAxisSpacing: AppDimensions.spacing12,
+              childAspectRatio: 0.75,
+            ),
+            itemCount: photoUrls.length,
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onTap: () {
+                  _showPhotoViewer(photoUrls, index);
+                },
+                child: Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.shadow.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                        child: Image.network(
+                          photoUrls[index],
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: AppColors.lightGray,
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: AppColors.lightGray,
+                              child: const Icon(
+                                Icons.broken_image,
+                                color: AppColors.textSecondary,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    if (index == 0)
+                      Positioned(
+                        top: AppDimensions.spacing8,
+                        left: AppDimensions.spacing8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.spacing8,
+                            vertical: AppDimensions.spacing4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.3),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.star, color: Colors.white, size: 12),
+                              const SizedBox(width: AppDimensions.spacing4),
+                              Text(
+                                'Main',
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPhotoViewer(List<String> photoUrls, int initialIndex) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            PageView.builder(
+              controller: PageController(initialPage: initialIndex),
+              itemCount: photoUrls.length,
+              itemBuilder: (context, index) {
+                return InteractiveViewer(
+                  child: Center(
+                    child: Image.network(
+                      photoUrls[index],
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 16,
+              right: 16,
+              child: IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

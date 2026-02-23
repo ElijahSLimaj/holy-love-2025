@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 
 enum PresenceStatus {
   online,
@@ -34,10 +33,8 @@ class PresenceService {
         'lastSeen': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-
-      debugPrint('Set user online: $userId');
     } catch (e) {
-      debugPrint('Error setting online status: $e');
+      // Silently fail
     }
   }
 
@@ -52,10 +49,8 @@ class PresenceService {
         'lastSeen': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-
-      debugPrint('Set user away: $userId');
     } catch (e) {
-      debugPrint('Error setting away status: $e');
+      // Silently fail
     }
   }
 
@@ -70,10 +65,8 @@ class PresenceService {
         'lastSeen': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-
-      debugPrint('Set user offline: $userId');
     } catch (e) {
-      debugPrint('Error setting offline status: $e');
+      // Silently fail
     }
   }
 
@@ -107,7 +100,6 @@ class PresenceService {
         orElse: () => PresenceStatus.offline,
       );
     } catch (e) {
-      debugPrint('Error getting user status: $e');
       return PresenceStatus.offline;
     }
   }
@@ -155,7 +147,6 @@ class PresenceService {
       final lastSeen = doc.data()?['lastSeen'] as Timestamp?;
       return lastSeen?.toDate();
     } catch (e) {
-      debugPrint('Error getting last seen: $e');
       return null;
     }
   }
@@ -165,12 +156,13 @@ class PresenceService {
     if (userId == null) return;
 
     try {
-      await _firestore.collection(_presenceCollection).doc(userId).update({
+      await _firestore.collection(_presenceCollection).doc(userId).set({
+        'userId': userId,
         'lastSeen': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true));
     } catch (e) {
-      debugPrint('Error updating heartbeat: $e');
+      // Silently fail - presence is not critical
     }
   }
 

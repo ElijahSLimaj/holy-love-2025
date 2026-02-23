@@ -47,6 +47,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   String? _currentUserId;
   bool _isTyping = false;
   bool _isOnline = false;
+  bool _isPremium = false;
   Timer? _typingTimer;
 
   StreamSubscription<List<ChatMessage>>? _messagesSubscription;
@@ -96,6 +97,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _currentUserId = authState.user.id;
     if (_currentUserId == null) return;
 
+    // Load premium status for read receipts
+    final stats = await _statsRepository.getUserStats(_currentUserId!);
+    if (mounted) {
+      setState(() {
+        _isPremium = stats?.isPremium ?? false;
+      });
+    }
+
     _conversationId = _messageRepository.generateConversationId(
       _currentUserId!,
       widget.user.id,
@@ -120,10 +129,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _messagesSubscription = _messageRepository
         .streamMessages(_conversationId!)
         .listen((messages) {
+      debugPrint('Received ${messages.length} messages');
       if (mounted) {
         setState(() {
           _messages = messages.reversed.toList();
         });
+        debugPrint('Messages set to state');
 
         Future.delayed(const Duration(milliseconds: 100), () {
           if (mounted) _scrollToBottom();
@@ -131,6 +142,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
         _messageRepository.markMessagesAsRead(conversationId: _conversationId!);
       }
+    }, onError: (e, stack) {
+      debugPrint('Error streaming messages: $e');
+      debugPrint('Stack: $stack');
     });
 
     _presenceSubscription = _presenceService
@@ -181,9 +195,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final appBar = _buildAppBar();
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: _buildAppBar(),
+      appBar: appBar,
       body: Column(
         children: [
           Expanded(
@@ -361,6 +377,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           showAvatar: showAvatar,
           user: widget.user,
           isFromCurrentUser: message.senderId == _currentUserId,
+          isPremium: _isPremium,
         );
       },
     );

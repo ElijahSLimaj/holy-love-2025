@@ -37,6 +37,9 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
   final _ageFocusNode = FocusNode();
   final _locationFocusNode = FocusNode();
 
+  // Gender selection
+  String? _selectedGender;
+
   late AnimationController _slideController;
   late List<Animation<Offset>> _fieldAnimations;
 
@@ -86,7 +89,8 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
     _lastNameController.text = widget.profileData['lastName'] ?? '';
     _ageController.text = widget.profileData['age']?.toString() ?? '';
     _locationController.text = widget.profileData['location'] ?? '';
-    
+    _selectedGender = widget.profileData['gender'];
+
     // Load existing location data if available
     if (widget.profileData['locationData'] != null) {
       final locationMap = widget.profileData['locationData'] as Map<String, dynamic>;
@@ -271,6 +275,14 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
 
               const SizedBox(height: AppDimensions.spacing20),
 
+              // Gender Selection
+              SlideTransition(
+                position: _fieldAnimations[2],
+                child: _buildGenderSelector(),
+              ),
+
+              const SizedBox(height: AppDimensions.spacing20),
+
               // Location Field with Search
               SlideTransition(
                 position: _fieldAnimations[3],
@@ -360,6 +372,102 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
               width: 2.0,
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGenderSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'I am a',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        const SizedBox(height: AppDimensions.spacing12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildGenderOption(
+                label: 'Man',
+                value: 'male',
+                icon: Icons.male,
+              ),
+            ),
+            const SizedBox(width: AppDimensions.spacing12),
+            Expanded(
+              child: _buildGenderOption(
+                label: 'Woman',
+                value: 'female',
+                icon: Icons.female,
+              ),
+            ),
+          ],
+        ),
+        if (_fieldErrors['gender'] != null)
+          Padding(
+            padding: const EdgeInsets.only(top: AppDimensions.spacing8),
+            child: Text(
+              _fieldErrors['gender']!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.error,
+                  ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildGenderOption({
+    required String label,
+    required String value,
+    required IconData icon,
+  }) {
+    final isSelected = _selectedGender == value;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedGender = value;
+        });
+        widget.onDataChanged('gender', value);
+        HapticFeedback.lightImpact();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(
+          vertical: AppDimensions.paddingL,
+          horizontal: AppDimensions.paddingM,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : AppColors.lightGray,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? AppColors.white : AppColors.textSecondary,
+              size: AppDimensions.iconM,
+            ),
+            const SizedBox(width: AppDimensions.spacing8),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: isSelected ? AppColors.white : AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
         ),
       ),
     );
@@ -466,6 +574,15 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
       return;
     }
 
+    // Validate gender selection
+    if (_selectedGender == null) {
+      setState(() {
+        _fieldErrors['gender'] = 'Please select your gender';
+      });
+      HapticFeedback.mediumImpact();
+      return;
+    }
+
     // Use selected location data if available, otherwise parse from text
     String locationCity;
     String locationState;
@@ -512,6 +629,7 @@ class ProfileStepBasicInfoState extends State<ProfileStepBasicInfo>
             firstName: _firstNameController.text.trim(),
             lastName: _lastNameController.text.trim(),
             age: int.parse(_ageController.text),
+            gender: _selectedGender!,
             location: _locationController.text.trim(),
             geoLocation: geoLocation,
             locationCity: locationCity.isNotEmpty ? locationCity : null,

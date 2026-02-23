@@ -227,6 +227,25 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               ),
               child: Row(
                 children: [
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.of(context).pop();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(AppDimensions.spacing8),
+                      decoration: BoxDecoration(
+                        color: AppColors.lightGray.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppDimensions.spacing16),
                   Container(
                     padding: const EdgeInsets.all(AppDimensions.paddingS),
                     decoration: BoxDecoration(

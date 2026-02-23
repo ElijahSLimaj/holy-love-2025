@@ -33,10 +33,13 @@ class _ProfileCardState extends State<ProfileCard>
   late AnimationController _scaleController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  late PageController _pageController;
+  int _currentPhotoIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
     _setupAnimations();
     _startAnimations();
   }
@@ -81,6 +84,7 @@ class _ProfileCardState extends State<ProfileCard>
   void dispose() {
     _fadeController.dispose();
     _scaleController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -133,6 +137,72 @@ class _ProfileCardState extends State<ProfileCard>
   }
 
   Widget _buildPhotoSection() {
+    // Check if profile has photos
+    if (widget.profile.photoUrls.isNotEmpty) {
+      return Stack(
+        children: [
+          // Photo PageView for swiping
+          PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentPhotoIndex = index;
+              });
+            },
+            itemCount: widget.profile.photoUrls.length,
+            itemBuilder: (context, index) {
+              return Image.network(
+                widget.profile.photoUrls[index],
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                errorBuilder: (context, error, stackTrace) {
+                  return _buildPlaceholder();
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return _buildPlaceholder();
+                },
+              );
+            },
+          ),
+          // Photo indicators
+          if (widget.profile.photoUrls.length > 1)
+            Positioned(
+              top: AppDimensions.spacing16,
+              left: AppDimensions.spacing16,
+              right: AppDimensions.spacing16,
+              child: Row(
+                children: List.generate(
+                  widget.profile.photoUrls.length,
+                  (index) => Expanded(
+                    child: Container(
+                      height: 3,
+                      margin: EdgeInsets.only(
+                        right: index < widget.profile.photoUrls.length - 1
+                            ? AppDimensions.spacing4
+                            : 0,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _currentPhotoIndex == index
+                            ? AppColors.white
+                            : AppColors.white.withOpacity(0.4),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      );
+    }
+
+    // Show placeholder if no photos
+    return _buildPlaceholder();
+  }
+
+  Widget _buildPlaceholder() {
     return Container(
       color: AppColors.lightGray,
       child: Center(
@@ -189,6 +259,7 @@ class _ProfileCardState extends State<ProfileCard>
   }
 
   Widget _buildPhotoIndicators() {
+    // Indicators are now built inside _buildPhotoSection
     return const SizedBox.shrink();
   }
 

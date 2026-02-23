@@ -62,6 +62,7 @@ class ProfileCreationBloc
         firstName: event.firstName,
         lastName: event.lastName,
         age: event.age,
+        gender: event.gender,
         location: event.location,
         geoLocation: event.geoLocation,
         locationCity: event.locationCity,

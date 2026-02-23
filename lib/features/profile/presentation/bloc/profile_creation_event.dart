@@ -11,6 +11,7 @@ class SaveBasicInfoRequested extends ProfileCreationEvent {
   final String firstName;
   final String lastName;
   final int age;
+  final String gender;
   final String location;
   final GeoPoint? geoLocation;
   final String? locationCity;
@@ -21,6 +22,7 @@ class SaveBasicInfoRequested extends ProfileCreationEvent {
     required this.firstName,
     required this.lastName,
     required this.age,
+    required this.gender,
     required this.location,
     this.geoLocation,
     this.locationCity,
@@ -33,6 +35,7 @@ class SaveBasicInfoRequested extends ProfileCreationEvent {
         firstName,
         lastName,
         age,
+        gender,
         location,
         geoLocation,
         locationCity,

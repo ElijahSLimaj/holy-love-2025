@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import '../../../profile/data/models/profile_data.dart';
 import '../models/user_profile.dart';
 import '../models/match_score.dart';
@@ -9,6 +8,9 @@ import '../../../../core/services/geo_service.dart';
 /// Service for finding and ranking potential matches
 class MatchingService {
   final FirebaseFirestore _firestore;
+  
+  static const String _usersCollection = 'users';
+  static const String _profileDetailsCollection = 'profileDetails';
   
   MatchingService({FirebaseFirestore? firestore}) 
       : _firestore = firestore ?? FirebaseFirestore.instance;
@@ -19,12 +21,9 @@ class MatchingService {
     int limit = 20,
   }) async {
     try {
-      debugPrint('Finding matches for user: $currentUserId');
-      
       // Get current user's profile and preferences
       final currentUserProfile = await _getCurrentUserProfile(currentUserId);
       if (currentUserProfile == null) {
-        debugPrint('Current user profile not found');
         return [];
       }
       
@@ -35,21 +34,16 @@ class MatchingService {
         limit: limit * 2, // Get more candidates to filter and rank
       );
       
-      debugPrint('Found ${candidates.length} candidates');
-      
       // Calculate compatibility scores and rank
       final rankedMatches = await _rankCandidates(
         currentUserProfile: currentUserProfile,
         candidates: candidates,
       );
       
-      debugPrint('Found ${rankedMatches.length} real matches');
-      
       // Return only real matches from database
       return rankedMatches.take(limit).toList();
       
     } catch (e) {
-      debugPrint('Error finding matches: $e');
       // Return empty list on error - no mock data fallback
       return [];
     }
@@ -58,12 +52,11 @@ class MatchingService {
   /// Get current user's profile data
   Future<ProfileData?> _getCurrentUserProfile(String userId) async {
     try {
-      final doc = await _firestore.collection('users').doc(userId).get();
+      final doc = await _firestore.collection(_usersCollection).doc(userId).get();
       if (!doc.exists) return null;
       
-      return ProfileData.fromFirestore(doc.data()!);
+      return ProfileData.fromFirestore(doc.data()!, documentId: doc.id);
     } catch (e) {
-      debugPrint('Error getting current user profile: $e');
       return null;
     }
   }
@@ -75,39 +68,62 @@ class MatchingService {
     required int limit,
   }) async {
     try {
-      // Get user's preferences
-      final preferencesDoc = await _firestore
-          .collection('users')
+      // Get current user's gender from profile details
+      final currentUserDetailsDoc = await _firestore
+          .collection(_usersCollection)
           .doc(currentUserId)
-          .collection('profile_details')
+          .collection(_profileDetailsCollection)
           .doc('details')
           .get();
-      
-      final preferences = preferencesDoc.data()?['preferences'] as Map<String, dynamic>?;
-      
+
+      final currentUserGender = currentUserDetailsDoc.data()?['gender'] as String?;
+
+      // Get user's preferences
+      final preferences = currentUserDetailsDoc.data()?['preferences'] as Map<String, dynamic>?;
+
       // Query potential matches with basic filters
       Query query = _firestore
-          .collection('users')
+          .collection(_usersCollection)
           .where('profileComplete', isEqualTo: true)
           .limit(limit);
 
       // Exclude current user
       // Note: Firestore doesn't support != so we'll filter this client-side
-      
+
       final querySnapshot = await query.get();
       final candidates = <UserProfile>[];
-      
+
+
       for (final doc in querySnapshot.docs) {
-        if (doc.id == currentUserId) continue; // Skip current user
+        if (doc.id == currentUserId) {
+          continue; // Skip current user
+        }
+
+        // Get candidate's profile details to check gender
+        final candidateDetailsDoc = await _firestore
+            .collection(_usersCollection)
+            .doc(doc.id)
+            .collection(_profileDetailsCollection)
+            .doc('details')
+            .get();
+
+        final candidateGender = candidateDetailsDoc.data()?['gender'] as String?;
+
+        // Skip same gender (heterosexual matching only)
+        if (currentUserGender != null && candidateGender != null) {
+          if (currentUserGender == candidateGender) {
+            continue;
+          }
+        }
         
         try {
-          final profileData = ProfileData.fromFirestore(doc.data() as Map<String, dynamic>);
+          final profileData = ProfileData.fromFirestore(doc.data() as Map<String, dynamic>, documentId: doc.id);
           
           // Get profile details
           final detailsDoc = await _firestore
-              .collection('users')
+              .collection(_usersCollection)
               .doc(doc.id)
-              .collection('profile_details')
+              .collection(_profileDetailsCollection)
               .doc('details')
               .get();
           
@@ -127,13 +143,12 @@ class MatchingService {
             candidates.add(candidateUserProfile);
           }
         } catch (e) {
-          debugPrint('Error processing candidate ${doc.id}: $e');
+          // Skip this candidate on error
         }
       }
       
       return candidates;
     } catch (e) {
-      debugPrint('Error getting candidates: $e');
       return [];
     }
   }
@@ -275,8 +290,6 @@ class MatchingService {
         lng2: candidate.longitude!,
       );
       
-      debugPrint('Real distance calculated: ${distance.toStringAsFixed(1)} km between ${currentUser.firstName} and ${candidate.firstName}');
-      
       // Score based on actual distance
       if (distance <= 5) return 25;   // Very close
       if (distance <= 15) return 20;  // Close
@@ -289,7 +302,6 @@ class MatchingService {
     
     // Fallback to mock distance if coordinates unavailable
     final distance = candidate.distanceKm;
-    debugPrint('Using fallback distance: $distance km for ${candidate.firstName}');
     
     if (distance <= 10) return 25;
     if (distance <= 25) return 15;
@@ -377,18 +389,33 @@ class MatchingService {
       );
     }
     
+    // Combine mainPhotoUrl with photoUrls array, avoiding duplicates
+    // This matches the logic in UserProfile.fromProfileData
+    final detailsPhotoUrls = details?.photoUrls ?? <String>[];
+    final mainPhotoUrl = profile.mainPhotoUrl;
+
+    final photoUrls = <String>[];
+    // Add main photo first if it exists
+    if (mainPhotoUrl != null && mainPhotoUrl.isNotEmpty) {
+      photoUrls.add(mainPhotoUrl);
+    }
+    // Add remaining photos, avoiding duplicates
+    for (final url in detailsPhotoUrls) {
+      if (url.isNotEmpty && !photoUrls.contains(url)) {
+        photoUrls.add(url);
+      }
+    }
+    
     return UserProfile(
       id: profile.userId,
       firstName: profile.firstName,
       lastName: profile.lastName,
       age: profile.age,
+      gender: profile.gender,
       location: profile.location,
       latitude: profile.geoLocation?.latitude,
       longitude: profile.geoLocation?.longitude,
-      photoUrls: [
-        if (profile.mainPhotoUrl != null) profile.mainPhotoUrl!,
-        ...(details?.photoUrls ?? []),
-      ],
+      photoUrls: photoUrls,
       bio: details?.bio ?? '',
       denomination: details?.denomination ?? '',
       churchAttendance: details?.churchAttendance ?? '',
